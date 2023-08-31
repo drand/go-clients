@@ -13,11 +13,11 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/drand/drand-cli/internal/lp2p"
 	client2 "github.com/drand/drand/client"
 	"github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
 	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/internal/lp2p"
 	"github.com/drand/drand/protobuf/drand"
 )
 

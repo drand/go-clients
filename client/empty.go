@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/drand/drand-cli/internal/chain"
 	"github.com/drand/drand/common"
 	chain2 "github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/internal/chain"
 )
 
 const emptyClientStringerValue = "EmptyClient"

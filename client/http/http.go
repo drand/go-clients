@@ -11,17 +11,11 @@ import (
 	"strings"
 	"time"
 
-	json "github.com/nikkolasg/hexjson"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	client2 "github.com/drand/drand/client"
 	"github.com/drand/drand/common"
 	chain2 "github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
 	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/internal/chain"
-	"github.com/drand/drand/internal/metrics"
+	json "github.com/nikkolasg/hexjson"
 )
 
 var errClientClosed = fmt.Errorf("client closed")
@@ -48,7 +42,7 @@ func New(ctx context.Context, l log.Logger, url string, chainHash []byte, transp
 	agent := fmt.Sprintf("drand-client-%s/1.0", path.Base(pn))
 	c := &httpClient{
 		root:   url,
-		client: instrumentClient(url, transport),
+		client: createClient(url, transport),
 		l:      l,
 		Agent:  agent,
 		done:   make(chan struct{}),
@@ -83,7 +77,7 @@ func NewWithInfo(l log.Logger, url string, info *chain2.Info, transport nhttp.Ro
 	c := &httpClient{
 		root:      url,
 		chainInfo: info,
-		client:    instrumentClient(url, transport),
+		client:    createClient(url, transport),
 		l:         l,
 		Agent:     agent,
 		done:      make(chan struct{}),
@@ -143,35 +137,12 @@ func Ping(ctx context.Context, root string) error {
 	return nil
 }
 
-// Instruments an HTTP client around a transport
-func instrumentClient(url string, transport nhttp.RoundTripper) *nhttp.Client {
+// createClient creates an HTTP client around a transport, allows to easily instrument it later
+func createClient(url string, transport nhttp.RoundTripper) *nhttp.Client {
 	hc := nhttp.Client{}
 	hc.Timeout = defaultHTTTPTimeout
 	hc.Jar = nhttp.DefaultClient.Jar
 	hc.CheckRedirect = nhttp.DefaultClient.CheckRedirect
-	urlLabel := prometheus.Labels{"url": url}
-
-	trace := &promhttp.InstrumentTrace{
-		DNSStart: func(t float64) {
-			metrics.ClientDNSLatencyVec.MustCurryWith(urlLabel).WithLabelValues("dns_start").Observe(t)
-		},
-		DNSDone: func(t float64) {
-			metrics.ClientDNSLatencyVec.MustCurryWith(urlLabel).WithLabelValues("dns_done").Observe(t)
-		},
-		TLSHandshakeStart: func(t float64) {
-			metrics.ClientTLSLatencyVec.MustCurryWith(urlLabel).WithLabelValues("tls_handshake_start").Observe(t)
-		},
-		TLSHandshakeDone: func(t float64) {
-			metrics.ClientTLSLatencyVec.MustCurryWith(urlLabel).WithLabelValues("tls_handshake_done").Observe(t)
-		},
-	}
-
-	transport = promhttp.InstrumentRoundTripperInFlight(metrics.ClientInFlight.With(urlLabel),
-		promhttp.InstrumentRoundTripperCounter(metrics.ClientRequests.MustCurryWith(urlLabel),
-			promhttp.InstrumentRoundTripperTrace(trace,
-				promhttp.InstrumentRoundTripperDuration(metrics.ClientLatencyVec.MustCurryWith(urlLabel),
-					transport))))
-
 	hc.Transport = transport
 
 	return &hc

@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/drand/drand-cli/internal/test"
 	"github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
 	"github.com/drand/drand/crypto"
-	"github.com/drand/drand/internal/test"
 )
 
 // fakeChainInfo creates a chain info object for use in tests.

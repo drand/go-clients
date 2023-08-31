@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/drand/drand-cli/internal/test/mock"
+	"github.com/drand/drand-cli/internal/test/testlogger"
 	"github.com/drand/drand/crypto"
-	"github.com/drand/drand/internal/test/mock"
-	"github.com/drand/drand/internal/test/testlogger"
 )
 
 func TestClient(t *testing.T) {

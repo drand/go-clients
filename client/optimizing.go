@@ -12,11 +12,11 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
+	"github.com/drand/drand-cli/internal/chain"
 	"github.com/drand/drand/common"
 	chain2 "github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
 	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/internal/chain"
 )
 
 const (

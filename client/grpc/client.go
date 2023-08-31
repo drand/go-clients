@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/drand/drand-cli/client"
+	commonutils "github.com/drand/drand/common"
 	"time"
 
 	grpcProm "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -12,11 +14,9 @@ import (
 	"google.golang.org/grpc/credentials"
 	grpcInsec "google.golang.org/grpc/credentials/insecure"
 
-	"github.com/drand/drand/client"
 	chain2 "github.com/drand/drand/common/chain"
 	client2 "github.com/drand/drand/common/client"
 	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/internal/chain"
 	"github.com/drand/drand/protobuf/common"
 	"github.com/drand/drand/protobuf/drand"
 )
@@ -32,15 +32,9 @@ type grpcClient struct {
 }
 
 // New creates a drand client backed by a GRPC connection.
-func New(l log.Logger, address, certPath string, insecure bool, chainHash []byte) (client2.Client, error) {
+func New(l log.Logger, address string, insecure bool, chainHash []byte) (client2.Client, error) {
 	var opts []grpc.DialOption
-	if certPath != "" {
-		creds, err := credentials.NewClientTLSFromFile(certPath, "")
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, grpc.WithTransportCredentials(creds))
-	} else if insecure {
+	if insecure {
 		opts = append(opts, grpc.WithTransportCredentials(grpcInsec.NewCredentials()))
 	} else {
 		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})))
@@ -54,7 +48,7 @@ func New(l log.Logger, address, certPath string, insecure bool, chainHash []byte
 		return nil, err
 	}
 
-	return &grpcClient{address, chainHash, NewPublicClient(conn), conn, l}, nil
+	return &grpcClient{address, chainHash, drand.NewPublicClient(conn), conn, l}, nil
 }
 
 func asRD(r *drand.PublicRandResponse) *client.RandomData {
@@ -71,7 +65,7 @@ func (g *grpcClient) String() string {
 	return fmt.Sprintf("GRPC(%q)", g.address)
 }
 
-// Get returns a the randomness at `round` or an error.
+// Get returns the randomness at `round` or an error.
 func (g *grpcClient) Get(ctx context.Context, round uint64) (client2.Result, error) {
 	curr, err := g.client.PublicRand(ctx, &drand.PublicRandRequest{Round: round, Metadata: g.getMetadata()})
 	if err != nil {
@@ -134,7 +128,7 @@ func (g *grpcClient) RoundAt(t time.Time) uint64 {
 	if err != nil {
 		return 0
 	}
-	return chain.CurrentRound(t.Unix(), time.Second*time.Duration(info.Period), info.GenesisTime)
+	return commonutils.CurrentRound(t.Unix(), time.Second*time.Duration(info.Period), info.GenesisTime)
 }
 
 // SetLog configures the client log output

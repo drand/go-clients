@@ -12,10 +12,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/urfave/cli/v2"
 
+	"github.com/drand/drand-cli/internal/lib"
 	"github.com/drand/drand/client"
 	"github.com/drand/drand/common"
 	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/internal/lib"
 )
 
 // Automatically set through -ldflags

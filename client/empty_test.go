@@ -3,11 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
+	commonutils "github.com/drand/drand/common"
 	"testing"
 	"time"
 
 	chain2 "github.com/drand/drand/common/client"
-	"github.com/drand/drand/internal/chain"
 )
 
 func TestEmptyClient(t *testing.T) {
@@ -26,7 +26,7 @@ func TestEmptyClient(t *testing.T) {
 	// should be able to retrieve RoundAt
 	now := time.Now()
 	rnd := c.RoundAt(now)
-	if rnd != chain.CurrentRound(now.Unix(), chainInfo.Period, chainInfo.GenesisTime) {
+	if rnd != commonutils.CurrentRound(now.Unix(), chainInfo.Period, chainInfo.GenesisTime) {
 		t.Fatal("unexpected RoundAt return value", rnd)
 	}
 

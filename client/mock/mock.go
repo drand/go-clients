@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/drand/drand-cli/internal/chain"
 	"github.com/drand/drand/client/test/result/mock"
 	chain2 "github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/internal/chain"
 )
 
 // Client provide a mocked client interface

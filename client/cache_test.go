@@ -5,10 +5,10 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/drand/drand-cli/internal/test/testlogger"
 	clientMock "github.com/drand/drand/client/mock"
 	"github.com/drand/drand/client/test/result/mock"
 	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/internal/test/testlogger"
 )
 
 func TestCacheGet(t *testing.T) {

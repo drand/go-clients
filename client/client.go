@@ -13,7 +13,6 @@ import (
 	"github.com/drand/drand/common/client"
 	"github.com/drand/drand/common/log"
 	"github.com/drand/drand/crypto"
-	"github.com/drand/drand/internal/metrics"
 )
 
 const clientStartupTimeoutDefault = time.Second * 5
@@ -108,7 +107,7 @@ func makeClient(ctx context.Context, l log.Logger, cfg *clientConfig) (client.Cl
 
 	wa.Start()
 
-	return attachMetrics(cfg, c)
+	return c, nil
 }
 
 //nolint:lll // This function has nicely named parameters, so it's long.
@@ -150,16 +149,6 @@ func makeWatcherClient(cfg *clientConfig, cache Cache) (client.Client, error) {
 	}
 	ec := EmptyClientWithInfo(cfg.chainInfo)
 	return &watcherClient{ec, w}, nil
-}
-
-func attachMetrics(cfg *clientConfig, c client.Client) (client.Client, error) {
-	if cfg.prometheus != nil {
-		if err := metrics.RegisterClientMetrics(cfg.prometheus); err != nil {
-			return nil, err
-		}
-		return newWatchLatencyMetricClient(c, cfg.chainInfo), nil
-	}
-	return c, nil
 }
 
 type clientConfig struct {

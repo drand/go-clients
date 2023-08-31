@@ -16,13 +16,13 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/drand/drand-cli/internal/chain"
+	"github.com/drand/drand-cli/internal/test"
+	"github.com/drand/drand-cli/internal/test/testlogger"
 	"github.com/drand/drand/client"
 	"github.com/drand/drand/client/test/cache"
 	chain2 "github.com/drand/drand/common/chain"
 	dcrypto "github.com/drand/drand/crypto"
-	"github.com/drand/drand/internal/chain"
-	"github.com/drand/drand/internal/test"
-	"github.com/drand/drand/internal/test/testlogger"
 	"github.com/drand/drand/protobuf/drand"
 )
 

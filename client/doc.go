@@ -35,9 +35,9 @@ Example:
 
 The "From" option allows you to specify clients that work over particular
 transports. HTTP, gRPC and libp2p PubSub clients are provided in drand's
-subpackages https://pkg.go.dev/github.com/drand/drand/internal/client/http,
-https://pkg.go.dev/github.com/drand/drand/internal/client/grpc and
-https://pkg.go.dev/github.com/drand/drand/internal/lp2p/clientlp2p/client
+subpackages https://pkg.go.dev/github.com/drand/drand-cli/internal/client/http,
+https://pkg.go.dev/github.com/drand/drand-cli/internal/client/grpc and
+https://pkg.go.dev/github.com/drand/drand-cli/internal/lp2p/clientlp2p/client
 respectively. Note that you are not restricted to just one client. You can use
 multiple clients of the same type or of different types. The base client will
 periodically "speed test" it's clients, failover, cache results and aggregate

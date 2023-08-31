@@ -7,8 +7,8 @@ import (
 
 	"github.com/BurntSushi/toml"
 
+	"github.com/drand/drand-cli/internal/net"
 	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/internal/net"
 )
 
 func generateJoiningProposal(l log.Logger, beaconID string, joining []string) (string, error) {
@@ -33,7 +33,6 @@ func generateProposal(l log.Logger, beaconID string, joining, remaining, leaving
 			}
 			participants = append(participants, &TomlParticipant{
 				Address:   res.Addr,
-				TLS:       res.Tls,
 				Key:       hex.EncodeToString(res.PubKey),
 				Signature: hex.EncodeToString(res.Signature),
 			})

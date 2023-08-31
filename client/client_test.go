@@ -9,6 +9,8 @@ import (
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 
+	"github.com/drand/drand-cli/internal/test"
+	"github.com/drand/drand-cli/internal/test/testlogger"
 	client2 "github.com/drand/drand/client"
 	"github.com/drand/drand/client/http"
 	clientMock "github.com/drand/drand/client/mock"
@@ -17,8 +19,6 @@ import (
 	"github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
 	"github.com/drand/drand/crypto"
-	"github.com/drand/drand/internal/test"
-	"github.com/drand/drand/internal/test/testlogger"
 )
 
 func TestClientConstraints(t *testing.T) {

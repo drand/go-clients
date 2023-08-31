@@ -9,13 +9,13 @@ import (
 
 	clock "github.com/jonboulle/clockwork"
 
+	"github.com/drand/drand-cli/internal/core"
+	dhttp "github.com/drand/drand-cli/internal/http"
+	"github.com/drand/drand-cli/internal/test/mock"
+	"github.com/drand/drand-cli/internal/test/testlogger"
 	chainCommon "github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/log"
 	"github.com/drand/drand/crypto"
-	"github.com/drand/drand/internal/core"
-	dhttp "github.com/drand/drand/internal/http"
-	"github.com/drand/drand/internal/test/mock"
-	"github.com/drand/drand/internal/test/testlogger"
 	"github.com/drand/drand/protobuf/drand"
 )
 

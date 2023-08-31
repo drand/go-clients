@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/drand/drand-cli/internal/chain"
 	chain2 "github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
 	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/internal/chain"
 )
 
 // PollingWatcher generalizes the `Watch` interface for clients which learn new values

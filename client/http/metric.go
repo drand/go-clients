@@ -6,9 +6,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/drand/drand-cli/internal/chain"
+	"github.com/drand/drand-cli/internal/metrics"
 	chain2 "github.com/drand/drand/common/client"
-	"github.com/drand/drand/internal/chain"
-	"github.com/drand/drand/internal/metrics"
 )
 
 // MeasureHeartbeats periodically tracks latency observed on a set of HTTP clients
