@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/drand/drand-cli/internal/chain"
 	"github.com/drand/drand/common"
 	chain2 "github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
@@ -30,7 +29,7 @@ func (m *emptyClient) Info(_ context.Context) (*chain2.Info, error) {
 }
 
 func (m *emptyClient) RoundAt(t time.Time) uint64 {
-	return chain.CurrentRound(t.Unix(), m.i.Period, m.i.GenesisTime)
+	return common.CurrentRound(t.Unix(), m.i.Period, m.i.GenesisTime)
 }
 
 func (m *emptyClient) Get(_ context.Context, _ uint64) (client.Result, error) {

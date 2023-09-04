@@ -5,10 +5,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/drand/drand-cli/internal/test/testlogger"
-	clientMock "github.com/drand/drand/client/mock"
-	"github.com/drand/drand/client/test/result/mock"
+	clientMock "github.com/drand/drand-cli/client/mock"
+	"github.com/drand/drand-cli/client/test/result/mock"
 	"github.com/drand/drand/common/client"
+	"github.com/drand/drand/common/testlogger"
 )
 
 func TestCacheGet(t *testing.T) {
@@ -72,7 +72,7 @@ func TestCacheGetLatest(t *testing.T) {
 		t.Fatal(e)
 	}
 
-	if r0.Round() == r1.Round() {
+	if r0.GetRound() == r1.GetRound() {
 		t.Fatal("cached result for latest")
 	}
 }

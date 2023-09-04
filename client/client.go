@@ -269,7 +269,7 @@ func WithChainInfo(chainInfo *chain.Info) Option {
 // previously not-yet-verified results.
 func WithVerifiedResult(result client.Result) Option {
 	return func(cfg *clientConfig) error {
-		if cfg.previousResult != nil && cfg.previousResult.Round() > result.Round() {
+		if cfg.previousResult != nil && cfg.previousResult.GetRound() > result.GetRound() {
 			return errors.New("refusing to override verified result with an earlier result")
 		}
 		cfg.previousResult = result

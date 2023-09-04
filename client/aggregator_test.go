@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drand/drand-cli/internal/test/testlogger"
-	clientMock "github.com/drand/drand/client/mock"
-	"github.com/drand/drand/client/test/result/mock"
+	clientMock "github.com/drand/drand-cli/client/mock"
+	"github.com/drand/drand-cli/client/test/result/mock"
 	"github.com/drand/drand/common/client"
+	"github.com/drand/drand/common/testlogger"
 )
 
 func TestAggregatorClose(t *testing.T) {

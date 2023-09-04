@@ -13,8 +13,7 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/drand/drand-cli/internal/lp2p"
-	client2 "github.com/drand/drand/client"
+	client2 "github.com/drand/drand-cli/client"
 	"github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
 	"github.com/drand/drand/common/log"
@@ -56,6 +55,11 @@ func WithPubsub(l log.Logger, ps *pubsub.PubSub, clk clock.Clock, bufferSize int
 	})
 }
 
+// PubSubTopic generates a drand pubsub topic from a chain hash.
+func PubSubTopic(h string) string {
+	return fmt.Sprintf("/drand/pubsub/v0.0.0/%s", h)
+}
+
 // NewWithPubsub creates a gossip randomness client.
 //
 //nolint:funlen,lll // This is the correct function length
@@ -73,7 +77,7 @@ func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache clie
 	}
 
 	chainHash := hex.EncodeToString(info.Hash())
-	topic := lp2p.PubSubTopic(chainHash)
+	topic := PubSubTopic(chainHash)
 	if err := ps.RegisterTopicValidator(topic, randomnessValidator(info, cache, c, clk)); err != nil {
 		cancel()
 		return nil, fmt.Errorf("creating topic: %w", err)
@@ -205,9 +209,9 @@ func (c *Client) Watch(ctx context.Context) <-chan client.Result {
 				}
 				select {
 				case outerCh <- dat:
-					c.log.Debugw("processed random beacon", "round", dat.Round())
+					c.log.Debugw("processed random beacon", "round", dat.GetRound())
 				default:
-					c.log.Warnw("", "gossip client", "randomness notification dropped due to a full channel", "round", dat.Round())
+					c.log.Warnw("", "gossip client", "randomness notification dropped due to a full channel", "round", dat.GetRound())
 				}
 			case <-ctx.Done():
 				c.log.Debugw("client.Watch done")

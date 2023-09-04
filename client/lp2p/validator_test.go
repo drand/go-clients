@@ -6,6 +6,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/drand/drand/common"
+	"github.com/drand/drand/common/key"
 	"testing"
 	"time"
 
@@ -16,12 +18,10 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/drand/drand-cli/internal/chain"
-	"github.com/drand/drand-cli/internal/test"
-	"github.com/drand/drand-cli/internal/test/testlogger"
-	"github.com/drand/drand/client"
-	"github.com/drand/drand/client/test/cache"
+	"github.com/drand/drand-cli/client"
+	"github.com/drand/drand-cli/client/test/cache"
 	chain2 "github.com/drand/drand/common/chain"
+	"github.com/drand/drand/common/testlogger"
 	dcrypto "github.com/drand/drand/crypto"
 	"github.com/drand/drand/protobuf/drand"
 )
@@ -30,15 +30,15 @@ type randomDataWrapper struct {
 	data client.RandomData
 }
 
-func (r *randomDataWrapper) Round() uint64 {
+func (r *randomDataWrapper) GetRound() uint64 {
 	return r.data.Rnd
 }
 
-func (r *randomDataWrapper) Signature() []byte {
+func (r *randomDataWrapper) GetSignature() []byte {
 	return r.data.Sig
 }
 
-func (r *randomDataWrapper) Randomness() []byte {
+func (r *randomDataWrapper) GetRandomness() []byte {
 	return r.data.Random
 }
 
@@ -55,7 +55,7 @@ func randomPeerID(t *testing.T) peer.ID {
 }
 
 func fakeRandomData(info *chain2.Info, clk clock.Clock) client.RandomData {
-	rnd := chain.CurrentRound(clk.Now().Unix(), info.Period, info.GenesisTime)
+	rnd := common.CurrentRound(clk.Now().Unix(), info.Period, info.GenesisTime)
 
 	sig := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sig, rnd)
@@ -71,10 +71,20 @@ func fakeRandomData(info *chain2.Info, clk clock.Clock) client.RandomData {
 }
 
 func fakeChainInfo() *chain2.Info {
+	sch, err := dcrypto.GetSchemeFromEnv()
+	if err != nil {
+		panic(err)
+	}
+	pair, err := key.NewKeyPair("fakeChainInfo.test:1234", sch)
+	if err != nil {
+		panic(err)
+	}
+
 	return &chain2.Info{
 		Period:      time.Second,
 		GenesisTime: time.Now().Unix(),
-		PublicKey:   test.GenerateIDs(1)[0].Public.Key,
+		PublicKey:   pair.Public.Key,
+		Scheme:      sch.Name,
 	}
 }
 
@@ -116,7 +126,7 @@ func TestRejectsFutureBeacons(t *testing.T) {
 	validate := randomnessValidator(info, nil, &c, clk)
 
 	resp := drand.PublicRandResponse{
-		Round: chain.CurrentRound(time.Now().Unix(), info.Period, info.GenesisTime) + 5,
+		Round: common.CurrentRound(time.Now().Unix(), info.Period, info.GenesisTime) + 5,
 	}
 	data, err := proto.Marshal(&resp)
 	if err != nil {
@@ -137,7 +147,7 @@ func TestRejectsVerifyBeaconFailure(t *testing.T) {
 	validate := randomnessValidator(info, nil, &c, clk)
 
 	resp := drand.PublicRandResponse{
-		Round: chain.CurrentRound(time.Now().Unix(), info.Period, info.GenesisTime),
+		Round: common.CurrentRound(time.Now().Unix(), info.Period, info.GenesisTime),
 		// missing signature etc.
 	}
 	data, err := proto.Marshal(&resp)
@@ -219,13 +229,13 @@ func TestIgnoresCachedEqualNonRandomDataBeacon(t *testing.T) {
 	validate := randomnessValidator(info, ca, &c, clk)
 	rdata := randomDataWrapper{fakeRandomData(info, clk)}
 
-	ca.Add(rdata.Round(), &rdata)
+	ca.Add(rdata.GetRound(), &rdata)
 
 	resp := drand.PublicRandResponse{
-		Round:             rdata.Round(),
-		Signature:         rdata.Signature(),
+		Round:             rdata.GetRound(),
+		Signature:         rdata.GetSignature(),
 		PreviousSignature: rdata.data.PreviousSignature,
-		Randomness:        rdata.Randomness(),
+		Randomness:        rdata.GetRandomness(),
 	}
 	data, err := proto.Marshal(&resp)
 	if err != nil {
@@ -247,16 +257,16 @@ func TestRejectsCachedEqualNonRandomDataBeacon(t *testing.T) {
 	validate := randomnessValidator(info, ca, &c, clk)
 	rdata := randomDataWrapper{fakeRandomData(info, clk)}
 
-	ca.Add(rdata.Round(), &rdata)
+	ca.Add(rdata.GetRound(), &rdata)
 
 	sig := make([]byte, 8)
-	binary.LittleEndian.PutUint64(sig, rdata.Round()+1)
+	binary.LittleEndian.PutUint64(sig, rdata.GetRound()+1)
 
 	resp := drand.PublicRandResponse{
-		Round:             rdata.Round(),
+		Round:             rdata.GetRound(),
 		Signature:         sig, // incoming message has incorrect sig
 		PreviousSignature: rdata.data.PreviousSignature,
-		Randomness:        rdata.Randomness(),
+		Randomness:        rdata.GetRandomness(),
 	}
 	data, err := proto.Marshal(&resp)
 	if err != nil {

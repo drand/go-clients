@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/drand/drand-cli/internal/test"
 	"github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
+	"github.com/drand/drand/common/key"
 	"github.com/drand/drand/crypto"
 )
 
@@ -19,11 +19,14 @@ func fakeChainInfo(t *testing.T) *chain.Info {
 	t.Helper()
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
+	pair, err := key.NewKeyPair("fakeChainInfo.test:1234", sch)
+	require.NoError(t, err)
+
 	return &chain.Info{
-		Scheme:      sch.Name,
 		Period:      time.Second,
 		GenesisTime: time.Now().Unix(),
-		PublicKey:   test.GenerateIDs(1)[0].Public.Key,
+		PublicKey:   pair.Public.Key,
+		Scheme:      sch.Name,
 	}
 }
 
@@ -56,10 +59,10 @@ func nextResult(t *testing.T, ch <-chan client.Result) client.Result {
 func compareResults(t *testing.T, a, b client.Result) {
 	t.Helper()
 
-	if a.Round() != b.Round() {
-		t.Fatal("unexpected result round", a.Round(), b.Round())
+	if a.GetRound() != b.GetRound() {
+		t.Fatal("unexpected result round", a.GetRound(), b.GetRound())
 	}
-	if !bytes.Equal(a.Randomness(), b.Randomness()) {
-		t.Fatal("unexpected result randomness", a.Randomness(), b.Randomness())
+	if !bytes.Equal(a.GetRandomness(), b.GetRandomness()) {
+		t.Fatal("unexpected result randomness", a.GetRandomness(), b.GetRandomness())
 	}
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/drand/drand-cli/internal/chain"
+	commonutils "github.com/drand/drand/common"
 	chain2 "github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
 	"github.com/drand/drand/common/log"
@@ -27,7 +27,7 @@ func PollingWatcher(ctx context.Context, c client.Client, chainInfo *chain2.Info
 		defer close(ch)
 
 		// Initially, wait to synchronize to the round boundary.
-		_, nextTime := chain.NextRound(time.Now().Unix(), chainInfo.Period, chainInfo.GenesisTime)
+		_, nextTime := commonutils.NextRound(time.Now().Unix(), chainInfo.Period, chainInfo.GenesisTime)
 		select {
 		case <-ctx.Done():
 			return

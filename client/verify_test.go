@@ -7,12 +7,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/drand/drand-cli/internal/test/testlogger"
-	client2 "github.com/drand/drand/client"
-	clientMock "github.com/drand/drand/client/mock"
-	"github.com/drand/drand/client/test/result/mock"
+	client2 "github.com/drand/drand-cli/client"
+	clientMock "github.com/drand/drand-cli/client/mock"
+	"github.com/drand/drand-cli/client/test/result/mock"
 	"github.com/drand/drand/common/client"
 	"github.com/drand/drand/common/log"
+	"github.com/drand/drand/common/testlogger"
 	"github.com/drand/drand/crypto"
 )
 
@@ -52,10 +52,10 @@ func VerifyFuncTest(t *testing.T, clients, upTo int) {
 	l := testlogger.New(t)
 	c, results := mockClientWithVerifiableResults(ctx, t, l, clients)
 
-	res, err := c.Get(context.Background(), results[upTo].Round())
+	res, err := c.Get(context.Background(), results[upTo].GetRound())
 	require.NoError(t, err)
 
-	if res.Round() != results[upTo].Round() {
-		t.Fatal("expected to get result.", results[upTo].Round(), res.Round(), fmt.Sprintf("%v", c))
+	if res.GetRound() != results[upTo].GetRound() {
+		t.Fatal("expected to get result.", results[upTo].GetRound(), res.GetRound(), fmt.Sprintf("%v", c))
 	}
 }

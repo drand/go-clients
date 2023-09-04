@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	clientMock "github.com/drand/drand/client/mock"
-	"github.com/drand/drand/client/test/result/mock"
+	clientMock "github.com/drand/drand-cli/client/mock"
+	"github.com/drand/drand-cli/client/test/result/mock"
 	"github.com/drand/drand/common/client"
 )
 

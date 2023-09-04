@@ -3,21 +3,21 @@ package client_test
 import (
 	"context"
 	"errors"
+	"github.com/drand/drand/common/key"
 	"testing"
 	"time"
 
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 
-	"github.com/drand/drand-cli/internal/test"
-	"github.com/drand/drand-cli/internal/test/testlogger"
-	client2 "github.com/drand/drand/client"
-	"github.com/drand/drand/client/http"
-	clientMock "github.com/drand/drand/client/mock"
-	httpmock "github.com/drand/drand/client/test/http/mock"
-	"github.com/drand/drand/client/test/result/mock"
+	client2 "github.com/drand/drand-cli/client"
+	"github.com/drand/drand-cli/client/http"
+	clientMock "github.com/drand/drand-cli/client/mock"
+	httpmock "github.com/drand/drand-cli/client/test/http/mock"
+	"github.com/drand/drand-cli/client/test/result/mock"
 	"github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
+	"github.com/drand/drand/common/testlogger"
 	"github.com/drand/drand/crypto"
 )
 
@@ -77,7 +77,7 @@ func TestClientMultiple(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	if r.Round() <= 0 {
+	if r.GetRound() <= 0 {
 		t.Fatal("expected valid client")
 	}
 	_ = c.Close()
@@ -89,13 +89,7 @@ func TestClientWithChainInfo(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	id := test.GenerateIDs(1)[0]
-	chainInfo := &chain.Info{
-		PublicKey:   id.Public.Key,
-		GenesisTime: 100,
-		Period:      time.Second,
-		Scheme:      crypto.DefaultSchemeID,
-	}
+	chainInfo := fakeChainInfo(t)
 	lg := testlogger.New(t)
 	hc, err := http.NewWithInfo(lg, "http://nxdomain.local/", chainInfo, nil)
 	require.NoError(t, err)
@@ -139,7 +133,7 @@ func TestClientCache(t *testing.T) {
 		t.Fatal(e)
 	}
 	cancel()
-	_, e = c.Get(ctx, r0.Round())
+	_, e = c.Get(ctx, r0.GetRound())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -327,7 +321,7 @@ func TestClientAutoWatch(t *testing.T) {
 
 	time.Sleep(chainInfo.Period)
 	cancel()
-	r, err := c.Get(ctx, results[0].Round())
+	r, err := c.Get(ctx, results[0].GetRound())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -400,7 +394,7 @@ func TestClientAutoWatchRetry(t *testing.T) {
 
 	// We should be able to retrieve all the results from the cache.
 	for i := range results {
-		r, err := c.Get(ctx, results[i].Round())
+		r, err := c.Get(ctx, results[i].GetRound())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -414,8 +408,8 @@ func compareResults(t *testing.T, expected, actual client.Result) {
 
 	require.NotNil(t, expected)
 	require.NotNil(t, actual)
-	require.Equal(t, expected.Round(), actual.Round())
-	require.Equal(t, expected.Randomness(), actual.Randomness())
+	require.Equal(t, expected.GetRound(), actual.GetRound())
+	require.Equal(t, expected.GetRandomness(), actual.GetRandomness())
 }
 
 // fakeChainInfo creates a chain info object for use in tests.
@@ -423,10 +417,13 @@ func fakeChainInfo(t *testing.T) *chain.Info {
 	t.Helper()
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
+	pair, err := key.NewKeyPair("fakeChainInfo.test:1234", sch)
+	require.NoError(t, err)
+
 	return &chain.Info{
 		Period:      time.Second,
 		GenesisTime: time.Now().Unix(),
-		PublicKey:   test.GenerateIDs(1)[0].Public.Key,
+		PublicKey:   pair.Public.Key,
 		Scheme:      sch.Name,
 	}
 }

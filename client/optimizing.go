@@ -12,9 +12,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/drand/drand-cli/internal/chain"
 	"github.com/drand/drand/common"
-	chain2 "github.com/drand/drand/common/chain"
+	"github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
 	"github.com/drand/drand/common/log"
 )
@@ -381,13 +380,13 @@ type watchResult struct {
 	client.Client
 }
 
-func (oc *optimizingClient) trackWatchResults(info *chain2.Info, in chan watchResult, out chan client.Result) {
+func (oc *optimizingClient) trackWatchResults(info *chain.Info, in chan watchResult, out chan client.Result) {
 	defer close(out)
 
 	latest := uint64(0)
 	for r := range in {
-		round := r.Result.Round()
-		timeOfRound := time.Unix(chain.TimeOfRound(info.Period, info.GenesisTime, round), 0)
+		round := r.Result.GetRound()
+		timeOfRound := time.Unix(common.TimeOfRound(info.Period, info.GenesisTime, round), 0)
 		stat := requestStat{
 			client:    r.Client,
 			rtt:       time.Since(timeOfRound),
@@ -610,7 +609,7 @@ ClientLoop:
 
 // Info returns the parameters of the chain this client is connected to.
 // The public key, when it started, and how frequently it updates.
-func (oc *optimizingClient) Info(ctx context.Context) (chainInfo *chain2.Info, err error) {
+func (oc *optimizingClient) Info(ctx context.Context) (chainInfo *chain.Info, err error) {
 	clients := oc.fastestClients()
 	for _, c := range clients {
 		ctx, cancel := context.WithTimeout(ctx, oc.requestTimeout)

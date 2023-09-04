@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/drand/drand/common/log"
+	"github.com/drand/drand/protobuf/drand"
 	"net"
 	"net/http"
 	"sync"
@@ -14,9 +16,9 @@ import (
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 
-	"github.com/drand/drand-cli/internal/test/testlogger"
-	"github.com/drand/drand/client"
-	"github.com/drand/drand/client/test/http/mock"
+	"github.com/drand/drand-cli/client"
+	"github.com/drand/drand-cli/client/test/http/mock"
+	"github.com/drand/drand/common/testlogger"
 	"github.com/drand/drand/crypto"
 )
 
@@ -45,7 +47,7 @@ func TestHTTPClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.Randomness()) == 0 {
+	if len(result.GetRandomness()) == 0 {
 		t.Fatal("no randomness provided")
 	}
 	full, ok := (result).(*client.RandomData)

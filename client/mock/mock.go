@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/drand/drand-cli/internal/chain"
-	"github.com/drand/drand/client/test/result/mock"
+	"github.com/drand/drand-cli/client/test/result/mock"
+	commonutils "github.com/drand/drand/common"
 	chain2 "github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
 )
@@ -48,7 +48,7 @@ func (m *Client) Get(ctx context.Context, round uint64) (client.Result, error) {
 	r := m.Results[0]
 	if m.StrictRounds {
 		for _, candidate := range m.Results {
-			if candidate.Round() == round {
+			if candidate.GetRound() == round {
 				r = candidate
 				break
 			}
@@ -134,7 +134,7 @@ func (m *InfoClient) Info(_ context.Context) (*chain2.Info, error) {
 }
 
 func (m *InfoClient) RoundAt(t time.Time) uint64 {
-	return chain.CurrentRound(t.Unix(), m.i.Period, m.i.GenesisTime)
+	return commonutils.CurrentRound(t.Unix(), m.i.Period, m.i.GenesisTime)
 }
 
 func (m *InfoClient) Get(_ context.Context, _ uint64) (client.Result, error) {

@@ -2,13 +2,13 @@ package client
 
 import (
 	"context"
+	"github.com/drand/drand/common/testlogger"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/drand/drand-cli/internal/test/testlogger"
-	clientMock "github.com/drand/drand/client/mock"
-	"github.com/drand/drand/client/test/result/mock"
+	clientMock "github.com/drand/drand-cli/client/mock"
+	"github.com/drand/drand-cli/client/test/result/mock"
 	"github.com/drand/drand/common/client"
 )
 
@@ -51,8 +51,8 @@ func waitForSpeedTest(t *testing.T, c client.Client, timeout time.Duration) {
 
 func expectRound(t *testing.T, res client.Result, r uint64) {
 	t.Helper()
-	if res.Round() != r {
-		t.Fatalf("expected round %v, got %v", r, res.Round())
+	if res.GetRound() != r {
+		t.Fatalf("expected round %v, got %v", r, res.GetRound())
 	}
 }
 
@@ -159,7 +159,7 @@ func TestOptimizingWatchRetryOnClose(t *testing.T) {
 
 	var i uint64
 	for r := range ch {
-		if r.Round() != i {
+		if r.GetRound() != i {
 			t.Fatal("unexpected round number")
 		}
 		i++
@@ -211,8 +211,8 @@ func TestOptimizingWatchFailover(t *testing.T) {
 
 	var i uint64 = 1
 	for r := range ch {
-		if r.Round() != i {
-			t.Fatalf("unexpected round number %d vs %d", r.Round(), i)
+		if r.GetRound() != i {
+			t.Fatalf("unexpected round number %d vs %d", r.GetRound(), i)
 		}
 		i++
 		if i > 5 {

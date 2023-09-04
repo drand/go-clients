@@ -97,7 +97,7 @@ func (c *cachingClient) Get(ctx context.Context, round uint64) (res client.Resul
 	}
 	val, err := c.Client.Get(ctx, round)
 	if err == nil && val != nil {
-		c.cache.Add(val.Round(), val)
+		c.cache.Add(val.GetRound(), val)
 	}
 	return val, err
 }
@@ -107,7 +107,7 @@ func (c *cachingClient) Watch(ctx context.Context) <-chan client.Result {
 	out := make(chan client.Result)
 	go func() {
 		for result := range in {
-			c.cache.Add(result.Round(), result)
+			c.cache.Add(result.GetRound(), result)
 			out <- result
 		}
 		close(out)

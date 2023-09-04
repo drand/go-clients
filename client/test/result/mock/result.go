@@ -34,23 +34,23 @@ type Result struct {
 	PSig []byte
 }
 
-// Randomness is a hash of the signature.
-func (r *Result) Randomness() []byte {
+// GetRandomness is a hash of the signature.
+func (r *Result) GetRandomness() []byte {
 	return r.Rand
 }
 
-// Signature is the signature of the randomness for this round.
-func (r *Result) Signature() []byte {
+// GetSignature is the signature of the randomness for this round.
+func (r *Result) GetSignature() []byte {
 	return r.Sig
 }
 
-// PreviousSignature is the signature of the previous round.
-func (r *Result) PreviousSignature() []byte {
+// GetPreviousSignature is the signature of the previous round.
+func (r *Result) GetPreviousSignature() []byte {
 	return r.PSig
 }
 
-// Round is the round number for this random data.
-func (r *Result) Round() uint64 {
+// GetRound is the round number for this random data.
+func (r *Result) GetRound() uint64 {
 	return r.Rnd
 }
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	client2 "github.com/drand/drand-cli/client"
 	nhttp "net/http"
 	"os"
 	"path"
@@ -362,7 +363,7 @@ func (h *httpClient) Info(_ context.Context) (*chain2.Info, error) {
 // RoundAt will return the most recent round of randomness that will be available
 // at time for the current client.
 func (h *httpClient) RoundAt(t time.Time) uint64 {
-	return chain.CurrentRound(t.Unix(), h.chainInfo.Period, h.chainInfo.GenesisTime)
+	return common.CurrentRound(t.Unix(), h.chainInfo.Period, h.chainInfo.GenesisTime)
 }
 
 func (h *httpClient) Close() error {
