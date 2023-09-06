@@ -28,7 +28,7 @@ package drand
 //	"github.com/drand/drand-cli/internal/fs"
 //	"github.com/drand/drand-cli/internal/net"
 //	"github.com/drand/drand-cli/internal/test"
-//	"github.com/drand/drand-cli/internal/test/testlogger"
+//	"github.com/drand/drand/common/testlogger"
 //	"github.com/drand/drand/common"
 //	chain2 "github.com/drand/drand/common/chain"
 //	"github.com/drand/drand/common/key"
@@ -40,31 +40,6 @@ package drand
 //	"github.com/drand/kyber/util/random"
 //)
 //
-//func TestMigrate(t *testing.T) {
-//	tmp := getSBFolderStructure(t)
-//
-//	args := []string{"drand", "util", "migrate", "--folder", tmp}
-//	app := CLI()
-//	require.NoError(t, app.Run(args))
-//
-//	l := testlogger.New(t)
-//	config := core.NewConfig(l, core.WithConfigFolder(tmp))
-//	defaultBeaconPath := path.Join(config.ConfigFolderMB(), common.DefaultBeaconID)
-//
-//	newGroupFilePath := path.Join(defaultBeaconPath, key.GroupFolderName)
-//	newKeyFilePath := path.Join(defaultBeaconPath, key.FolderName)
-//	newDBFilePath := path.Join(defaultBeaconPath, core.DefaultDBFolder)
-//
-//	if !fs.FolderExists(defaultBeaconPath, newGroupFilePath) {
-//		t.Errorf("group folder should have been migrated")
-//	}
-//	if !fs.FolderExists(defaultBeaconPath, newKeyFilePath) {
-//		t.Errorf("key folder should have been migrated")
-//	}
-//	if !fs.FolderExists(defaultBeaconPath, newDBFilePath) {
-//		t.Errorf("db folder should have been migrated")
-//	}
-//}
 //
 //func TestResetError(t *testing.T) {
 //	beaconID := test.GetBeaconIDFromEnv()
