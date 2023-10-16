@@ -129,10 +129,6 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 		opts = append(opts, pubClient.WithChainHash(hash))
 	}
 
-	if c.Bool(InsecureFlag.Name) {
-		opts = append(opts, pubClient.Insecurely())
-	}
-
 	gopt, err := buildGossipClient(c, l)
 	if err != nil {
 		return nil, err

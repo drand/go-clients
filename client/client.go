@@ -46,7 +46,7 @@ func trySetLog(c client.Client, l log.Logger) {
 
 // makeClient creates a client from a configuration.
 func makeClient(ctx context.Context, l log.Logger, cfg *clientConfig) (client.Client, error) {
-	if !cfg.insecure && cfg.chainHash == nil && cfg.chainInfo == nil {
+	if cfg.chainHash == nil && cfg.chainInfo == nil {
 		return nil, errors.New("no root of trust specified")
 	}
 	if len(cfg.clients) == 0 && cfg.watcher == nil {
@@ -166,8 +166,6 @@ type clientConfig struct {
 	// chain signature verification back to the 1st round, or to a know result to ensure
 	// determinism in the event of a compromised chain.
 	fullVerify bool
-	// insecure indicates the root of trust does not need to be present.
-	insecure bool
 	// autoWatch causes the client to start watching immediately in the background so that new randomness
 	// is proactively fetched and added to the cache.
 	autoWatch bool
@@ -212,30 +210,11 @@ func From(c ...client.Client) Option {
 	}
 }
 
-// Insecurely indicates the client should be allowed to provide randomness
-// when the root of trust is not fully provided in a validate-able way.
-func Insecurely() Option {
-	return func(cfg *clientConfig) error {
-		cfg.insecure = true
-		return nil
-	}
-}
-
 // WithCacheSize specifies how large of a cache of randomness values should be
 // kept locally. Default 32
 func WithCacheSize(size int) Option {
 	return func(cfg *clientConfig) error {
 		cfg.cacheSize = size
-		return nil
-	}
-}
-
-// WithLogger overrides the logging options for the client,
-// allowing specification of additional tags, or redirection / configuration
-// of logging level and output.
-func WithLogger(l log.Logger) Option {
-	return func(cfg *clientConfig) error {
-		cfg.log = l
 		return nil
 	}
 }
@@ -323,14 +302,6 @@ func WithAutoWatch() Option {
 func WithAutoWatchRetry(interval time.Duration) Option {
 	return func(cfg *clientConfig) error {
 		cfg.autoWatchRetry = interval
-		return nil
-	}
-}
-
-// WithPrometheus specifies a registry into which to report metrics
-func WithPrometheus(r prometheus.Registerer) Option {
-	return func(cfg *clientConfig) error {
-		cfg.prometheus = r
 		return nil
 	}
 }

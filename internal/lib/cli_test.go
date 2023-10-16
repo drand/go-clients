@@ -66,7 +66,7 @@ func run(l log.Logger, args []string) error {
 //	go grpcLis.Start()
 //	defer grpcLis.Stop(context.Background())
 //
-//	args := []string{"mock-client", "--url", "http://" + addr, "--grpc-connect", grpcLis.Addr(), "--insecure"}
+//	args := []string{"mock-client", "--url", "http://" + addr, "--grpc-connect", grpcLis.Addr()}
 //	err = run(lg, args)
 //	if err != nil {
 //		t.Fatal("GRPC should work", err)
@@ -116,7 +116,7 @@ func TestClientLibGroupConfJSON(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr, info, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr, info, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	var b bytes.Buffer

@@ -40,7 +40,7 @@ func TestClientConstraints(t *testing.T) {
 	// As we will run is insecurely, we will set chain info so client can fetch it
 	c.OptionalInfo = fakeChainInfo(t)
 
-	if _, e := client2.New(ctx, lg, client2.From(c), client2.Insecurely()); e != nil {
+	if _, e := client2.New(ctx, lg, client2.From(c)); e != nil {
 		t.Fatal(e)
 	}
 }
@@ -51,10 +51,10 @@ func TestClientMultiple(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr1, chainInfo, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr1, chainInfo, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
-	addr2, _, cancel2, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr2, _, cancel2 := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel2()
 
 	httpClients := http.ForURLs(ctx, lg, []string{"http://" + addr1, "http://" + addr2}, chainInfo.Hash())
@@ -110,7 +110,7 @@ func TestClientCache(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr1, chainInfo, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr1, chainInfo, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	lg := testlogger.New(t)
@@ -150,7 +150,7 @@ func TestClientWithoutCache(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr1, chainInfo, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr1, chainInfo, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	lg := testlogger.New(t)
@@ -283,7 +283,7 @@ func TestClientAutoWatch(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr1, chainInfo, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr1, chainInfo, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	httpClient := http.ForURLs(ctx, lg, []string{"http://" + addr1}, chainInfo.Hash())
