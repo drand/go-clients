@@ -107,14 +107,21 @@ func VerifiableResults(count int, sch *crypto.Scheme) (*chain.Info, []Result) {
 		tshare := tbls.SigShare(tsig)
 		sig := tshare.Value()
 
+		// chained mode
+		if sch.Name == crypto.DefaultSchemeID {
+			previous = make([]byte, len(sig))
+			copy(previous[:], sig)
+		} else {
+			previous = nil
+		}
+
 		out[i] = Result{
 			Sig:  sig,
 			PSig: previous,
 			Rnd:  uint64(i + 1),
 			Rand: crypto.RandomnessFromSignature(sig),
 		}
-		previous = make([]byte, len(sig))
-		copy(previous[:], sig)
+
 	}
 	info := chain.Info{
 		PublicKey:   public,

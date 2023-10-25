@@ -2,7 +2,10 @@ package lib
 
 import (
 	"bytes"
+	"context"
+	"encoding/hex"
 	"errors"
+	"github.com/drand/drand/test/mock"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -47,61 +50,60 @@ func run(l log.Logger, args []string) error {
 	return app.Run(args)
 }
 
-//
-//func TestClientLib(t *testing.T) {
-//	opts = []client.Option{}
-//	lg := testlogger.New(t)
-//	err := run(lg, []string{"mock-client"})
-//	if err == nil {
-//		t.Fatal("need to specify a connection method.", err)
-//	}
-//
-//	sch, err := crypto.GetSchemeFromEnv()
-//	require.NoError(t, err)
-//	clk := clock.NewFakeClockAt(time.Now())
-//	addr, info, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
-//	defer cancel()
-//
-//	grpcLis, _ := mock.NewMockGRPCPublicServer(t, lg, ":0", false, sch, clk)
-//	go grpcLis.Start()
-//	defer grpcLis.Stop(context.Background())
-//
-//	args := []string{"mock-client", "--url", "http://" + addr, "--grpc-connect", grpcLis.Addr()}
-//	err = run(lg, args)
-//	if err != nil {
-//		t.Fatal("GRPC should work", err)
-//	}
-//
-//	args = []string{"mock-client", "--url", "https://" + addr}
-//	err = run(lg, args)
-//	if err == nil {
-//		t.Fatal("http-relay needs insecure or hash", err)
-//	}
-//
-//	args = []string{"mock-client", "--url", "http://" + addr, "--hash", hex.EncodeToString(info.Hash())}
-//	err = run(lg, args)
-//	if err != nil {
-//		t.Fatal("http-relay should construct", err)
-//	}
-//
-//	args = []string{"mock-client", "--relay", fakeGossipRelayAddr}
-//	err = run(lg, args)
-//	if err == nil {
-//		t.Fatal("relays need URL to get chain info and hash", err)
-//	}
-//
-//	args = []string{"mock-client", "--relay", fakeGossipRelayAddr, "--hash", hex.EncodeToString(info.Hash())}
-//	err = run(lg, args)
-//	if err == nil {
-//		t.Fatal("relays need URL to get chain info and hash", err)
-//	}
-//
-//	args = []string{"mock-client", "--url", "http://" + addr, "--relay", fakeGossipRelayAddr, "--hash", hex.EncodeToString(info.Hash())}
-//	err = run(lg, args)
-//	if err != nil {
-//		t.Fatal("unable to get relay to work", err)
-//	}
-//}
+func TestClientLib(t *testing.T) {
+	opts = []client.Option{}
+	lg := testlogger.New(t)
+	err := run(lg, []string{"mock-client"})
+	if err == nil {
+		t.Fatal("need to specify a connection method.", err)
+	}
+
+	sch, err := crypto.GetSchemeFromEnv()
+	require.NoError(t, err)
+	clk := clock.NewFakeClockAt(time.Now())
+	addr, info, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	defer cancel()
+
+	grpcLis, _ := mock.NewMockGRPCPublicServer(t, lg, ":0", false, sch, clk)
+	go grpcLis.Start()
+	defer grpcLis.Stop(context.Background())
+
+	args := []string{"mock-client", "--url", "http://" + addr, "--grpc-connect", grpcLis.Addr()}
+	err = run(lg, args)
+	if err != nil {
+		t.Fatal("GRPC should work", err)
+	}
+
+	args = []string{"mock-client", "--url", "https://" + addr}
+	err = run(lg, args)
+	if err == nil {
+		t.Fatal("http-relay needs insecure or hash", err)
+	}
+
+	args = []string{"mock-client", "--url", "http://" + addr, "--hash", hex.EncodeToString(info.Hash())}
+	err = run(lg, args)
+	if err != nil {
+		t.Fatal("http-relay should construct", err)
+	}
+
+	args = []string{"mock-client", "--relay", fakeGossipRelayAddr}
+	err = run(lg, args)
+	if err == nil {
+		t.Fatal("relays need URL to get chain info and hash", err)
+	}
+
+	args = []string{"mock-client", "--relay", fakeGossipRelayAddr, "--hash", hex.EncodeToString(info.Hash())}
+	err = run(lg, args)
+	if err == nil {
+		t.Fatal("relays need URL to get chain info and hash", err)
+	}
+
+	args = []string{"mock-client", "--url", "http://" + addr, "--relay", fakeGossipRelayAddr, "--hash", hex.EncodeToString(info.Hash())}
+	err = run(lg, args)
+	if err != nil {
+		t.Fatal("unable to get relay to work", err)
+	}
+}
 
 func TestClientLibGroupConfTOML(t *testing.T) {
 	lg := testlogger.New(t)
@@ -147,6 +149,7 @@ func TestClientLibChainHashOverrideError(t *testing.T) {
 		fakeChainHash,
 	})
 	if !errors.Is(err, commonutils.ErrInvalidChainHash) {
+		t.Log(fakeChainHash)
 		t.Fatal("expected error from mismatched chain hashes. Got: ", err)
 	}
 }

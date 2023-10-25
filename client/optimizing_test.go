@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"github.com/drand/drand/common/testlogger"
 	"sync"
 	"testing"
 	"time"
@@ -10,6 +9,7 @@ import (
 	clientMock "github.com/drand/drand-cli/client/mock"
 	"github.com/drand/drand-cli/client/test/result/mock"
 	"github.com/drand/drand/common/client"
+	"github.com/drand/drand/common/testlogger"
 )
 
 // waitForSpeedTest waits until all clients have had their initial speed test.

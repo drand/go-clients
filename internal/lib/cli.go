@@ -18,6 +18,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	pubClient "github.com/drand/drand-cli/client"
+	"github.com/drand/drand-cli/client/grpc"
 	http2 "github.com/drand/drand-cli/client/http"
 	gclient "github.com/drand/drand-cli/client/lp2p"
 	"github.com/drand/drand-cli/internal/lp2p"
@@ -33,6 +34,13 @@ var (
 		Name:    "url",
 		Usage:   "root URL(s) for fetching randomness",
 		Aliases: []string{"http-relay-failover"}, // DEPRECATED
+	}
+	// GRPCConnectFlag is the CLI flag for host:port to dial a gRPC randomness
+	// provider.
+	GRPCConnectFlag = &cli.StringFlag{
+		Name:    "grpc-connect",
+		Usage:   "host:port to dial a gRPC randomness provider",
+		Aliases: []string{"connect"}, // DEPRECATED
 	}
 	// HashFlag is the CLI flag for the hash (in hex) of the targeted chain.
 	HashFlag = &cli.StringFlag{
@@ -85,6 +93,7 @@ var (
 // ClientFlags is a list of common flags for client creation
 var ClientFlags = []cli.Flag{
 	URLFlag,
+	GRPCConnectFlag,
 	HashFlag,
 	GroupConfFlag,
 	InsecureFlag,
@@ -129,6 +138,15 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 		opts = append(opts, pubClient.WithChainHash(hash))
 	}
 
+	grc, _, err := buildGrpcClient(c, info)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(grc) > 0 {
+		clients = append(clients, grc...)
+	}
+
 	gopt, err := buildGossipClient(c, l)
 	if err != nil {
 		return nil, err
@@ -136,6 +154,40 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 	opts = append(opts, gopt...)
 
 	return pubClient.Wrap(ctx, l, clients, opts...)
+}
+
+func buildGrpcClient(c *cli.Context, info *chainCommon.Info) ([]client.Client, *chainCommon.Info, error) {
+	if !c.IsSet(GRPCConnectFlag.Name) {
+		return nil, info, nil
+	}
+
+	var hash []byte
+	if c.IsSet(HashFlag.Name) {
+		var err error
+
+		hash, err = hex.DecodeString(c.String(HashFlag.Name))
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	if info != nil && len(hash) == 0 {
+		hash = info.Hash()
+	}
+
+	gc, err := grpc.New(c.String(GRPCConnectFlag.Name), c.Bool(InsecureFlag.Name), hash)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if info == nil {
+		info, err = gc.Info(c.Context)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return []client.Client{gc}, info, nil
 }
 
 func buildHTTPClients(c *cli.Context, l log.Logger, hash []byte, withInstrumentation bool) ([]client.Client, *chainCommon.Info, error) {
