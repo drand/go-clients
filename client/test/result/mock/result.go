@@ -2,7 +2,6 @@ package mock
 
 import (
 	"bytes"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"testing"
@@ -84,21 +83,21 @@ func roundToBytes(r int) []byte {
 func VerifiableResults(count int, sch *crypto.Scheme) (*chain.Info, []Result) {
 	secret := sch.KeyGroup.Scalar().Pick(random.New())
 	public := sch.KeyGroup.Point().Mul(secret, nil)
-	previous := make([]byte, 32)
-	if _, err := rand.Reader.Read(previous); err != nil {
-		panic(err)
-	}
 
+	var previous []byte
 	out := make([]Result, count)
 	for i := range out {
+		round := i + 1
 
+		// create the message depending on the scheme
 		var msg []byte
 		if sch.Name == crypto.DefaultSchemeID {
-			msg = sha256Hash(append(previous[:], roundToBytes(i+1)...))
+			msg = sha256Hash(append(previous[:], roundToBytes(round)...))
 		} else {
-			msg = sha256Hash(roundToBytes(i + 1))
+			msg = sha256Hash(roundToBytes(round))
 		}
 
+		// sign it
 		sshare := share.PriShare{I: 0, V: secret}
 		tsig, err := sch.ThresholdScheme.Sign(&sshare, msg)
 		if err != nil {
@@ -107,21 +106,17 @@ func VerifiableResults(count int, sch *crypto.Scheme) (*chain.Info, []Result) {
 		tshare := tbls.SigShare(tsig)
 		sig := tshare.Value()
 
-		// chained mode
-		if sch.Name == crypto.DefaultSchemeID {
-			previous = make([]byte, len(sig))
-			copy(previous[:], sig)
-		} else {
-			previous = nil
-		}
-
 		out[i] = Result{
 			Sig:  sig,
 			PSig: previous,
-			Rnd:  uint64(i + 1),
+			Rnd:  uint64(round),
 			Rand: crypto.RandomnessFromSignature(sig),
 		}
 
+		// set the previous sig if we're in chained mode
+		if sch.Name == crypto.DefaultSchemeID {
+			previous = sig
+		}
 	}
 	info := chain.Info{
 		PublicKey:   public,

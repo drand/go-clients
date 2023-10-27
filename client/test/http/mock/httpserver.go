@@ -2,12 +2,12 @@ package mock
 
 import (
 	"context"
+	"github.com/drand/drand-cli/client/mock"
 	"github.com/drand/drand/common"
 	"github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
 	dhttp "github.com/drand/drand/handler/http"
 	"github.com/drand/drand/protobuf/drand"
-	"github.com/drand/drand/test/mock"
 	clock "github.com/jonboulle/clockwork"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"

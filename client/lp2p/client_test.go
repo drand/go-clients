@@ -65,7 +65,7 @@ import (
 //
 //	baseRound := uint64(1969)
 //
-//	mockService := svc.(mock.Service)
+//	mockService := svc.(mock.RandService)
 //	// pub sub polls every 200ms
 //	wait := 250 * time.Millisecond
 //	for i := uint64(0); i < 3; i++ {

@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"github.com/drand/drand/test/mock"
+	"github.com/drand/drand-cli/client/mock"
 	"os"
 	"path/filepath"
 	"runtime"
