@@ -108,17 +108,19 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 	ctx := c.Context
 	clients := make([]client.Client, 0)
 
+	var info *chainCommon.Info
 	var err error
 	var hash []byte
 
 	l := log.DefaultLogger()
 
-	gc, info, err := buildHTTPClients(c, l, hash, withInstrumentation)
+	grc, info, err := buildGrpcClient(c, info)
 	if err != nil {
 		return nil, err
 	}
-	if len(gc) > 0 {
-		clients = append(clients, gc...)
+
+	if len(grc) > 0 {
+		clients = append(clients, grc...)
 	}
 
 	if c.IsSet(HashFlag.Name) && c.String(HashFlag.Name) != "" {
@@ -138,13 +140,16 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 		opts = append(opts, pubClient.WithChainHash(hash))
 	}
 
-	grc, _, err := buildGrpcClient(c, info)
+	if c.Bool(InsecureFlag.Name) {
+		opts = append(opts, pubClient.Insecurely())
+	}
+
+	gc, info, err := buildHTTPClients(c, l, hash, withInstrumentation)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(grc) > 0 {
-		clients = append(clients, grc...)
+	if len(gc) > 0 {
+		clients = append(clients, gc...)
 	}
 
 	gopt, err := buildGossipClient(c, l)

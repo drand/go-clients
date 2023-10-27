@@ -46,7 +46,7 @@ func trySetLog(c client.Client, l log.Logger) {
 
 // makeClient creates a client from a configuration.
 func makeClient(ctx context.Context, l log.Logger, cfg *clientConfig) (client.Client, error) {
-	if cfg.chainHash == nil && cfg.chainInfo == nil {
+	if cfg.insecure && cfg.chainHash == nil && cfg.chainInfo == nil {
 		return nil, errors.New("no root of trust specified")
 	}
 	if len(cfg.clients) == 0 && cfg.watcher == nil {
@@ -166,6 +166,8 @@ type clientConfig struct {
 	// chain signature verification back to the 1st round, or to a know result to ensure
 	// determinism in the event of a compromised chain.
 	fullVerify bool
+	// insecure indicates the root of trust does not need to be present.
+	insecure bool
 	// autoWatch causes the client to start watching immediately in the background so that new randomness
 	// is proactively fetched and added to the cache.
 	autoWatch bool
@@ -206,6 +208,15 @@ type Option func(cfg *clientConfig) error
 func From(c ...client.Client) Option {
 	return func(cfg *clientConfig) error {
 		cfg.clients = c
+		return nil
+	}
+}
+
+// Insecurely indicates the client should be allowed to provide randomness
+// when the root of trust is not fully provided in a validate-able way.
+func Insecurely() Option {
+	return func(cfg *clientConfig) error {
+		cfg.insecure = true
 		return nil
 	}
 }
