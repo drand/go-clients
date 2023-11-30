@@ -3,9 +3,10 @@ package client_test
 import (
 	"context"
 	"errors"
-	"github.com/drand/drand/common/key"
 	"testing"
 	"time"
+
+	"github.com/drand/drand/common/key"
 
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
@@ -51,17 +52,22 @@ func TestClientMultiple(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
+
 	addr1, chainInfo, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
-	addr2, _, cancel2 := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr2, chaininfo2, cancel2 := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel2()
 
+	t.Log("created mockhttppublicserver", "addr", addr1, "chaininfo", chainInfo)
+	t.Log("created mockhttppublicserver", "addr", addr2, "chaininfo", chaininfo2)
 	httpClients := http.ForURLs(ctx, lg, []string{"http://" + addr1, "http://" + addr2}, chainInfo.Hash())
 	if len(httpClients) == 0 {
 		t.Error("http clients is empty")
 		return
 	}
+
+	t.Log("Created", addr1, addr2)
 
 	var c client.Client
 	var e error

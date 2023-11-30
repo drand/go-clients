@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	client2 "github.com/drand/drand-cli/client"
 	nhttp "net/http"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	client2 "github.com/drand/drand-cli/client"
 
 	"github.com/drand/drand/common"
 	chain2 "github.com/drand/drand/common/chain"
@@ -238,7 +239,7 @@ func (h *httpClient) FetchChainInfo(ctx context.Context, chainHash []byte) (*cha
 
 		chainInfo, err := chain2.InfoFromJSON(infoBody.Body)
 		if err != nil {
-			resC <- httpInfoResponse{nil, fmt.Errorf("decoding response: %w", err)}
+			resC <- httpInfoResponse{nil, fmt.Errorf("decoding response [chain2.InfoFromJSON]: %w", err)}
 			return
 		}
 
@@ -300,8 +301,8 @@ func (h *httpClient) Get(ctx context.Context, round uint64) (client.Result, erro
 		req.Header.Set("User-Agent", h.Agent)
 
 		randResponse, err := h.client.Do(req)
-		if err != nil {
-			resC <- httpGetResponse{nil, fmt.Errorf("doing request: %w", err)}
+		if err != nil || randResponse.StatusCode != nhttp.StatusOK {
+			resC <- httpGetResponse{nil, fmt.Errorf("doing request %v: %w", req, err)}
 			return
 		}
 		defer randResponse.Body.Close()

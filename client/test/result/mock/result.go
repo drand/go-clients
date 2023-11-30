@@ -68,9 +68,14 @@ func (r *Result) AssertValid(t *testing.T) {
 	}
 }
 
-func sha256Hash(in []byte) []byte {
+func sha256Hash(prev []byte, round int) []byte {
 	h := sha256.New()
-	h.Write(in)
+	if prev != nil {
+		_, _ = h.Write(prev)
+	}
+	if round > 0 {
+		_ = binary.Write(h, binary.BigEndian, uint64(round))
+	}
 	return h.Sum(nil)
 }
 
@@ -91,12 +96,13 @@ func VerifiableResults(count int, sch *crypto.Scheme) (*chain.Info, []Result) {
 
 	out := make([]Result, count)
 	for i := range out {
-
 		var msg []byte
 		if sch.Name == crypto.DefaultSchemeID {
-			msg = sha256Hash(append(previous[:], roundToBytes(i+1)...))
+			// we're in chained mode
+			msg = sha256Hash(previous[:], i+1)
 		} else {
-			msg = sha256Hash(roundToBytes(i + 1))
+			// we are in unchained mode
+			msg = sha256Hash(nil, i+1)
 		}
 
 		sshare := share.PriShare{I: 0, V: secret}

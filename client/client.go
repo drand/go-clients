@@ -47,9 +47,11 @@ func trySetLog(c client.Client, l log.Logger) {
 // makeClient creates a client from a configuration.
 func makeClient(ctx context.Context, l log.Logger, cfg *clientConfig) (client.Client, error) {
 	if cfg.insecure && cfg.chainHash == nil && cfg.chainInfo == nil {
+		l.Errorw("no root of trust specified")
 		return nil, errors.New("no root of trust specified")
 	}
 	if len(cfg.clients) == 0 && cfg.watcher == nil {
+		l.Errorw("no points of contact specified")
 		return nil, errors.New("no points of contact specified")
 	}
 
@@ -84,7 +86,7 @@ func makeClient(ctx context.Context, l log.Logger, cfg *clientConfig) (client.Cl
 
 	verifiers := make([]client.Client, 0, len(cfg.clients))
 	for _, source := range cfg.clients {
-		sch, err := crypto.GetSchemeByIDWithDefault(cfg.chainInfo.Scheme)
+		sch, err := crypto.GetSchemeByID(cfg.chainInfo.Scheme)
 		if err != nil {
 			return nil, fmt.Errorf("invalid scheme name in makeClient: %w", err)
 		}

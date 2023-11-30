@@ -2,6 +2,12 @@ package mock
 
 import (
 	"context"
+	"fmt"
+	"net"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/drand/drand/common"
 	"github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
@@ -11,10 +17,6 @@ import (
 	clock "github.com/jonboulle/clockwork"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
-	"net"
-	"net/http"
-	"testing"
-	"time"
 
 	"github.com/drand/drand/crypto"
 )
@@ -25,6 +27,7 @@ func NewMockHTTPPublicServer(t *testing.T, badSecondRound bool, sch *crypto.Sche
 
 	server := mock.NewMockServer(t, badSecondRound, sch, clk)
 	client := Proxy(server)
+	fmt.Println(server)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	handler, err := dhttp.New(ctx, "")
