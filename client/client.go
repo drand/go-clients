@@ -46,7 +46,7 @@ func trySetLog(c client.Client, l log.Logger) {
 
 // makeClient creates a client from a configuration.
 func makeClient(ctx context.Context, l log.Logger, cfg *clientConfig) (client.Client, error) {
-	if cfg.insecure && cfg.chainHash == nil && cfg.chainInfo == nil {
+	if !cfg.insecure && cfg.chainHash == nil && cfg.chainInfo == nil {
 		l.Errorw("no root of trust specified")
 		return nil, errors.New("no root of trust specified")
 	}
@@ -189,6 +189,7 @@ func (c *clientConfig) tryPopulateInfo(ctx context.Context, clients ...client.Cl
 	if c.chainInfo == nil {
 		ctx, cancel := context.WithTimeout(ctx, clientStartupTimeoutDefault)
 		defer cancel()
+
 		for _, cli := range clients {
 			c.chainInfo, err = cli.Info(ctx)
 			if err == nil {

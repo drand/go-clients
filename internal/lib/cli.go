@@ -10,6 +10,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/BurntSushi/toml"
+	"github.com/drand/drand/common/key"
 	"github.com/google/uuid"
 	bds "github.com/ipfs/go-ds-badger2"
 	clock "github.com/jonboulle/clockwork"
@@ -111,6 +113,20 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 	var info *chainCommon.Info
 	var err error
 	var hash []byte
+	if groupPath := c.Path(GroupConfFlag.Name); groupPath != "" {
+		info, err = chainInfoFromGroupTOML(groupPath)
+		if err != nil {
+			info, err = chainInfoFromChainInfoJSON(groupPath)
+			if info == nil || err != nil {
+				return nil, fmt.Errorf("failed to decode group (%s) : %w", groupPath, err)
+			}
+		}
+		opts = append(opts, pubClient.WithChainInfo(info))
+	}
+
+	if info != nil {
+		hash = info.Hash()
+	}
 
 	l := log.DefaultLogger()
 
@@ -118,12 +134,11 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 	if err != nil {
 		return nil, err
 	}
-
 	if len(grc) > 0 {
 		clients = append(clients, grc...)
 	}
 
-	if c.IsSet(HashFlag.Name) && c.String(HashFlag.Name) != "" {
+	if c.String(HashFlag.Name) != "" {
 		hash, err = hex.DecodeString(c.String(HashFlag.Name))
 		if err != nil {
 			return nil, err
@@ -202,6 +217,9 @@ func buildHTTPClients(c *cli.Context, l log.Logger, hash []byte, withInstrumenta
 	var skipped []string
 	var hc client.Client
 	var info *chainCommon.Info
+
+	l.Infow("Building HTTP clients", "hash", len(hash), "urls", c.StringSlice(URLFlag.Name))
+
 	for _, url := range c.StringSlice(URLFlag.Name) {
 		hc, err = http2.New(ctx, l, url, hash, nhttp.DefaultTransport)
 		if err != nil {
@@ -226,6 +244,9 @@ func buildHTTPClients(c *cli.Context, l log.Logger, hash []byte, withInstrumenta
 				continue
 			}
 			clients = append(clients, hc)
+		}
+		if !bytes.Equal(hash, info.Hash()) {
+			l.Warnw("mismatch between retrieved chain info hash and provided hash", "chainInfo", info.Hash(), "provided", hash)
 		}
 	}
 
@@ -294,4 +315,27 @@ func buildClientHost(l log.Logger, clientListenAddr string, relayMultiaddr []ma.
 		return nil, err
 	}
 	return ps, nil
+}
+
+// chainInfoFromGroupTOML reads a drand group TOML file and returns the chain info.
+func chainInfoFromGroupTOML(filePath string) (*chainCommon.Info, error) {
+	gt := &key.GroupTOML{}
+	_, err := toml.DecodeFile(filePath, gt)
+	if err != nil {
+		return nil, err
+	}
+	g := &key.Group{}
+	err = g.FromTOML(gt)
+	if err != nil {
+		return nil, err
+	}
+	return chainCommon.NewChainInfo(g), nil
+}
+
+func chainInfoFromChainInfoJSON(filePath string) (*chainCommon.Info, error) {
+	b, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return chainCommon.InfoFromJSON(bytes.NewBuffer(b))
 }

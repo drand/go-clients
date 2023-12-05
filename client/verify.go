@@ -174,7 +174,7 @@ func (v *verifyingClient) getTrustedPreviousSignature(ctx context.Context, round
 
 func (v *verifyingClient) verify(ctx context.Context, info *chain2.Info, r *RandomData) (err error) {
 	fetchPrevSignature := v.strict // only useful for chained schemes
-	ps := r.PreviousSignature
+	ps := r.GetPreviousSignature()
 
 	if fetchPrevSignature {
 		ps, err = v.getTrustedPreviousSignature(ctx, r.GetRound())

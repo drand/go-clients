@@ -235,6 +235,10 @@ func (oc *optimizingClient) fastestClients() []client.Client {
 // Get returns the randomness at `round` or an error.
 func (oc *optimizingClient) Get(ctx context.Context, round uint64) (res client.Result, err error) {
 	clients := oc.fastestClients()
+	// no need to race clients when we have only one
+	if len(clients) == 1 {
+		return clients[0].Get(ctx, round)
+	}
 	var stats []*requestStat
 	ch := raceGet(ctx, clients, round, oc.requestTimeout, oc.requestConcurrency)
 	err = errors.New("no valid clients")

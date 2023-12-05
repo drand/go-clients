@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"github.com/drand/drand/test/mock"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
+
+	"github.com/drand/drand/test/mock"
 
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
@@ -68,7 +69,7 @@ func TestClientLib(t *testing.T) {
 	go grpcLis.Start()
 	defer grpcLis.Stop(context.Background())
 
-	args := []string{"mock-client", "--url", "http://" + addr, "--grpc-connect", grpcLis.Addr()}
+	args := []string{"mock-client", "--url", "http://" + addr, "--grpc-connect", grpcLis.Addr(), "--insecure"}
 	err = run(lg, args)
 	if err != nil {
 		t.Fatal("GRPC should work", err)
@@ -118,6 +119,7 @@ func TestClientLibGroupConfJSON(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
+
 	addr, info, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 

@@ -2,12 +2,12 @@ package mock
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"testing"
 	"time"
 
+	localClient "github.com/drand/drand-cli/client"
 	"github.com/drand/drand/common"
 	"github.com/drand/drand/common/chain"
 	"github.com/drand/drand/common/client"
@@ -27,7 +27,7 @@ func NewMockHTTPPublicServer(t *testing.T, badSecondRound bool, sch *crypto.Sche
 
 	server := mock.NewMockServer(t, badSecondRound, sch, clk)
 	client := Proxy(server)
-	fmt.Println(server)
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	handler, err := dhttp.New(ctx, "")
@@ -91,10 +91,11 @@ func (d *drandProxy) Get(ctx context.Context, round uint64) (client.Result, erro
 	if err != nil {
 		return nil, err
 	}
-	return &common.Beacon{
-		Round:       resp.Round,
-		Signature:   resp.Signature,
-		PreviousSig: resp.PreviousSignature,
+	return &localClient.RandomData{
+		Rnd:               resp.Round,
+		Random:            resp.Randomness,
+		Sig:               resp.Signature,
+		PreviousSignature: resp.PreviousSignature,
 	}, nil
 }
 

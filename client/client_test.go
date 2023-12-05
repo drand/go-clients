@@ -41,7 +41,7 @@ func TestClientConstraints(t *testing.T) {
 	// As we will run is insecurely, we will set chain info so client can fetch it
 	c.OptionalInfo = fakeChainInfo(t)
 
-	if _, e := client2.New(ctx, lg, client2.From(c)); e != nil {
+	if _, e := client2.New(ctx, lg, client2.From(c), client2.Insecurely()); e != nil {
 		t.Fatal(e)
 	}
 }
@@ -61,13 +61,13 @@ func TestClientMultiple(t *testing.T) {
 
 	t.Log("created mockhttppublicserver", "addr", addr1, "chaininfo", chainInfo)
 	t.Log("created mockhttppublicserver", "addr", addr2, "chaininfo", chaininfo2)
+
+	// TODO: review this, are we really expecting this to work when the two servers aren't serving the same chainhash?
 	httpClients := http.ForURLs(ctx, lg, []string{"http://" + addr1, "http://" + addr2}, chainInfo.Hash())
 	if len(httpClients) == 0 {
 		t.Error("http clients is empty")
 		return
 	}
-
-	t.Log("Created", addr1, addr2)
 
 	var c client.Client
 	var e error
