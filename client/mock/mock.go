@@ -38,7 +38,7 @@ func (m *Client) String() string {
 	return "Mock"
 }
 
-// Get returns a the randomness at `round` or an error.
+// Get returns the randomness at `round` or an error.
 func (m *Client) Get(ctx context.Context, round uint64) (client.Result, error) {
 	m.Lock()
 	if len(m.Results) == 0 {
