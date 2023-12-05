@@ -499,6 +499,9 @@ github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13/go.mod h1:SqUrOPUn
 github.com/docker/go-units v0.4.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
 github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4=
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
+github.com/drand/drand v1.5.7/go.mod h1:jrJ0244yOHNL5V04vazk3mFatjAWm3i6dg6URWwgbXk=
+github.com/drand/drand v1.5.9-0.20231205130709-881d056487b7 h1:IEW/xLeyaufieO8ZpEynnyMMMYNPcqD4zA1q1ZUiOV0=
+github.com/drand/drand v1.5.9-0.20231205130709-881d056487b7/go.mod h1:TzheRfrx2IkjJxF2tjiyXmtCWmkifD+GxATU3Tq/81E=
 github.com/drand/kyber v1.2.0 h1:22SbBxsKbgQnJUoyYKIfG909PhBsj0vtANeu4BX5xgE=
 github.com/drand/kyber v1.2.0/go.mod h1:6TqFlCc7NGOiNVTF9pF2KcDRfllPd9XOkExuG5Xtwfo=
 github.com/drand/kyber-bls12381 v0.3.1 h1:KWb8l/zYTP5yrvKTgvhOrk2eNPscbMiUOIeWBnmUxGo=

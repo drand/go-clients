@@ -2,10 +2,8 @@ module github.com/drand/drand-cli
 
 go 1.20
 
-replace github.com/drand/drand => ../drand
-
 require (
-	github.com/drand/drand v1.5.7
+	github.com/drand/drand v1.5.9-0.20231205130709-881d056487b7
 	github.com/drand/kyber v1.2.0
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/handlers v1.5.1
