@@ -59,6 +59,9 @@ func (v *verifyingClient) Get(ctx context.Context, round uint64) (client.Result,
 	if err := v.verify(ctx, info, rd); err != nil {
 		return nil, err
 	}
+	if round != 0 && rd.GetRound() != round {
+		return nil, fmt.Errorf("round mismatch (malicious relay): %d != %d", rd.GetRound(), round)
+	}
 	return rd, nil
 }
 

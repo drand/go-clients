@@ -16,13 +16,13 @@ import (
 	"github.com/drand/drand/crypto"
 )
 
-func mockClientWithVerifiableResults(ctx context.Context, t *testing.T, l log.Logger, n int) (client.Client, []mock.Result) {
+func mockClientWithVerifiableResults(ctx context.Context, t *testing.T, l log.Logger, n int, strictRounds bool) (client.Client, []mock.Result) {
 	t.Helper()
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 
 	info, results := mock.VerifiableResults(n, sch)
-	mc := clientMock.Client{Results: results, StrictRounds: true, OptionalInfo: info}
+	mc := clientMock.Client{Results: results, StrictRounds: strictRounds, OptionalInfo: info}
 
 	var c client.Client
 
@@ -50,7 +50,7 @@ func TestVerifyWithOldVerifiedResult(t *testing.T) {
 func VerifyFuncTest(t *testing.T, clients, upTo int) {
 	ctx := context.Background()
 	l := testlogger.New(t)
-	c, results := mockClientWithVerifiableResults(ctx, t, l, clients)
+	c, results := mockClientWithVerifiableResults(ctx, t, l, clients, true)
 
 	res, err := c.Get(context.Background(), results[upTo].GetRound())
 	require.NoError(t, err)
@@ -58,4 +58,16 @@ func VerifyFuncTest(t *testing.T, clients, upTo int) {
 	if res.GetRound() != results[upTo].GetRound() {
 		t.Fatal("expected to get result.", results[upTo].GetRound(), res.GetRound(), fmt.Sprintf("%v", c))
 	}
+}
+
+func TestGetWithRoundMismatch(t *testing.T) {
+	ctx := context.Background()
+	l := testlogger.New(t)
+	c, results := mockClientWithVerifiableResults(ctx, t, l, 5, false)
+	for i := 1; i < len(results); i++ {
+		results[i] = results[0]
+	}
+
+	_, err := c.Get(context.Background(), 3)
+	require.ErrorContains(t, err, "round mismatch (malicious relay): 1 != 3")
 }
