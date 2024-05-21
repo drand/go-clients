@@ -25,7 +25,7 @@ const (
 	// when `Get` is called for on-demand results, and also how many watch
 	// clients are spun up (in addition to clients marked as passive) to
 	// provide results to `Watch` requests.
-	defaultRequestConcurrency = 1
+	defaultRequestConcurrency = 2
 	// defaultWatchRetryInterval is the time after which a closed watch channel
 	// is re-open when no context error occurred.
 	defaultWatchRetryInterval = time.Second * 30

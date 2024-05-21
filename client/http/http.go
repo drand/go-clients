@@ -150,7 +150,7 @@ func createClient(url string, transport nhttp.RoundTripper) *nhttp.Client {
 	return &hc
 }
 
-func IsServerReady(ctx context.Context, addr string) (er error) {
+func IsServerReady(ctx context.Context, addr string) error {
 	counter := 0
 	for {
 		// Ping is wrapping its context with a Timeout on maxTimeoutHTTPRequest anyway.

@@ -151,8 +151,7 @@ func (c *watchAggregator) Watch(ctx context.Context) <-chan client.Result {
 			c.cancelPassive()
 			c.cancelPassive = nil
 		}
-		// TODO: any reason we are not passing the existing context here?
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(ctx)
 		go c.distribute(c.Client.Watch(ctx), cancel)
 	}
 	return sub.c

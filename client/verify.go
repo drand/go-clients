@@ -81,7 +81,8 @@ func (v *verifyingClient) Watch(ctx context.Context) <-chan client.Result {
 		defer close(outCh)
 		for r := range inCh {
 			if err := v.verify(ctx, info, asRandomData(r)); err != nil {
-				v.log.Warnw("", "verifying_client", "skipping invalid watch round", "round", r.GetRound(), "err", err)
+				v.log.Errorw("failed signature verification, something nefarious could be going on!",
+					"round", r.GetRound(), "signature", r.GetSignature(), "err", err)
 				continue
 			}
 			outCh <- r

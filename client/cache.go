@@ -107,6 +107,9 @@ func (c *cachingClient) Watch(ctx context.Context) <-chan client.Result {
 	out := make(chan client.Result)
 	go func() {
 		for result := range in {
+			if ctx.Err() != nil {
+				break
+			}
 			c.cache.Add(result.GetRound(), result)
 			out <- result
 		}
