@@ -3,6 +3,7 @@ module github.com/drand/drand-cli
 go 1.20
 
 require (
+	github.com/BurntSushi/toml v1.3.2
 	github.com/drand/drand v1.5.9-0.20231205130709-881d056487b7
 	github.com/drand/kyber v1.2.0
 	github.com/google/uuid v1.3.1
@@ -28,7 +29,6 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/ardanlabs/darwin/v2 v2.0.0 // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
