@@ -7,8 +7,8 @@ import (
 
 	clientMock "github.com/drand/drand-cli/client/mock"
 	"github.com/drand/drand-cli/client/test/result/mock"
-	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/testlogger"
+	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/log"
 )
 
 func TestAggregatorClose(t *testing.T) {
@@ -23,7 +23,7 @@ func TestAggregatorClose(t *testing.T) {
 		},
 	}
 
-	ac := newWatchAggregator(testlogger.New(t), c, nil, true, 0)
+	ac := newWatchAggregator(log.New(nil, log.DebugLevel, true), c, nil, true, 0)
 
 	err := ac.Close() // should cancel the autoWatch and close the underlying client
 	if err != nil {
@@ -52,7 +52,7 @@ func TestAggregatorPassive(t *testing.T) {
 		},
 	}
 
-	ac := newWatchAggregator(testlogger.New(t), c, wc, false, 0)
+	ac := newWatchAggregator(log.New(nil, log.DebugLevel, true), c, wc, false, 0)
 
 	wc.WatchCh <- &mock.Result{Rnd: 1234}
 	c.WatchCh <- &mock.Result{Rnd: 5678}

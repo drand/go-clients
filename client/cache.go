@@ -6,8 +6,8 @@ import (
 
 	lru "github.com/hashicorp/golang-lru"
 
-	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/log"
+	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/log"
 )
 
 // Cache provides a mechanism to check for rounds in the cache.

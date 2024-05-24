@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/drand/drand-cli/client"
-	commonutils "github.com/drand/drand/common"
+	commonutils "github.com/drand/drand/v2/common"
 	"time"
 
 	clock "github.com/jonboulle/clockwork"
@@ -12,9 +12,9 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"google.golang.org/protobuf/proto"
 
-	chain2 "github.com/drand/drand/common/chain"
-	"github.com/drand/drand/crypto"
-	"github.com/drand/drand/protobuf/drand"
+	chain2 "github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/crypto"
+	"github.com/drand/drand/v2/protobuf/drand"
 )
 
 func randomnessValidator(info *chain2.Info, cache client.Cache, c *Client, clk clock.Clock) pubsub.ValidatorEx {

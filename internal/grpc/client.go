@@ -13,12 +13,11 @@ import (
 	grpcInsec "google.golang.org/grpc/credentials/insecure"
 
 	localClient "github.com/drand/drand-cli/client"
-	commonutils "github.com/drand/drand/common"
-	"github.com/drand/drand/common/chain"
-	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/protobuf/common"
-	"github.com/drand/drand/protobuf/drand"
+	commonutils "github.com/drand/drand/v2/common"
+	"github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/drand/v2/protobuf/drand"
 )
 
 const grpcDefaultTimeout = 5 * time.Second
@@ -116,8 +115,8 @@ func (g *grpcClient) translate(stream drand.Public_PublicRandStreamClient, out c
 	}
 }
 
-func (g *grpcClient) getMetadata() *common.Metadata {
-	return &common.Metadata{ChainHash: g.chainHash}
+func (g *grpcClient) getMetadata() *drand.Metadata {
+	return &drand.Metadata{ChainHash: g.chainHash}
 }
 
 func (g *grpcClient) RoundAt(t time.Time) uint64 {

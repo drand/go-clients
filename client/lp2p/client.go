@@ -14,10 +14,10 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	client2 "github.com/drand/drand-cli/client"
-	"github.com/drand/drand/common/chain"
-	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/protobuf/drand"
+	"github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/drand/v2/protobuf/drand"
 )
 
 // Client is a concrete pubsub client implementation

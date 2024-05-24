@@ -28,12 +28,11 @@ package drand
 //	"github.com/drand/drand-cli/internal/fs"
 //	"github.com/drand/drand-cli/internal/net"
 //	"github.com/drand/drand-cli/internal/test"
-//	"github.com/drand/drand/common/testlogger"
-//	"github.com/drand/drand/common"
-//	chain2 "github.com/drand/drand/common/chain"
-//	"github.com/drand/drand/common/key"
-//	"github.com/drand/drand/common/log"
-//	"github.com/drand/drand/crypto"
+//	"github.com/drand/drand/v2/common"
+//	chain2 "github.com/drand/drand/v2/common/chain"
+//	"github.com/drand/drand/v2/common/key"
+//	"github.com/drand/drand/v2/common/log"
+//	"github.com/drand/drand/v2/crypto"
 //	"github.com/drand/kyber"
 //	"github.com/drand/kyber/share"
 //	"github.com/drand/kyber/share/dkg"
@@ -64,7 +63,7 @@ package drand
 //
 //func TestDeleteBeacon(t *testing.T) {
 //	beaconID := test.GetBeaconIDFromEnv()
-//	l := testlogger.New(t)
+//	l := log.New(nil, log.DebugLevel, true)
 //	ctx := context.Background()
 //	sch, err := crypto.GetSchemeFromEnv()
 //	require.NoError(t, err)
@@ -136,7 +135,7 @@ package drand
 //
 //func TestKeySelfSign(t *testing.T) {
 //	beaconID := test.GetBeaconIDFromEnv()
-//	l := testlogger.New(t)
+//	l := log.New(nil, log.DebugLevel, true)
 //
 //	tmp := path.Join(t.TempDir(), "drand")
 //
@@ -173,7 +172,7 @@ package drand
 //
 //func TestKeyGen(t *testing.T) {
 //	beaconID := test.GetBeaconIDFromEnv()
-//	l := testlogger.New(t)
+//	l := log.New(nil, log.DebugLevel, true)
 //
 //	tmp := path.Join(t.TempDir(), "drand")
 //	sch, _ := crypto.GetSchemeFromEnv()
@@ -325,7 +324,7 @@ package drand
 //
 ////nolint:funlen
 //func TestStartWithoutGroup(t *testing.T) {
-//	lg := testlogger.New(t)
+//	lg := log.New(nil, log.DebugLevel, true)
 //	sch, err := crypto.GetSchemeFromEnv()
 //	require.NoError(t, err)
 //	beaconID := test.GetBeaconIDFromEnv()
@@ -478,7 +477,7 @@ package drand
 //
 //func testStartedDrandFunctional(t *testing.T, ctrlPort, rootPath, address string, group *key.Group, fileStore key.Store, beaconID string) {
 //	t.Helper()
-//	lg := testlogger.New(t)
+//	lg := log.New(nil, log.DebugLevel, true)
 //
 //	testPing(t, ctrlPort)
 //	testStatus(t, ctrlPort, beaconID)
@@ -589,7 +588,7 @@ package drand
 ////nolint:funlen //This is a test
 //func TestClientTLS(t *testing.T) {
 //	t.Skip("The test fails because the logic for generating the group has changed")
-//	lg := testlogger.New(t)
+//	lg := log.New(nil, log.DebugLevel, true)
 //	sch, err := crypto.GetSchemeFromEnv()
 //	require.NoError(t, err)
 //	beaconID := test.GetBeaconIDFromEnv()
@@ -683,7 +682,7 @@ package drand
 //
 //func testStartedTLSDrandFunctional(t *testing.T, ctrlPort, certPath string, group *key.Group, priv *key.Pair) {
 //	t.Helper()
-//	lg := testlogger.New(t)
+//	lg := log.New(nil, log.DebugLevel, true)
 //
 //	var err error
 //
@@ -755,7 +754,7 @@ package drand
 //		t.Skip("skipping test in short mode.")
 //	}
 //
-//	l := testlogger.New(t)
+//	l := log.New(nil, log.DebugLevel, true)
 //	sch, err := crypto.GetSchemeFromEnv()
 //	require.NoError(t, err)
 //	beaconID := test.GetBeaconIDFromEnv()
@@ -822,7 +821,7 @@ package drand
 //		t.Skip("skipping test in short mode.")
 //	}
 //
-//	l := testlogger.New(t)
+//	l := log.New(nil, log.DebugLevel, true)
 //	sch, err := crypto.GetSchemeFromEnv()
 //	require.NoError(t, err)
 //	beaconID := test.GetBeaconIDFromEnv()
@@ -934,7 +933,7 @@ package drand
 //		t.Skip("skipping slow test in short mode.")
 //	}
 //
-//	l := testlogger.New(t)
+//	l := log.New(nil, log.DebugLevel, true)
 //	sch, err := crypto.GetSchemeFromEnv()
 //	require.NoError(t, err)
 //	beaconID := test.GetBeaconIDFromEnv()
@@ -1008,7 +1007,7 @@ package drand
 //		t.Skip("skipping slow test in short mode.")
 //	}
 //
-//	l := testlogger.New(t)
+//	l := log.New(nil, log.DebugLevel, true)
 //	sch, err := crypto.GetSchemeFromEnv()
 //	require.NoError(t, err)
 //	beaconID := test.GetBeaconIDFromEnv()
@@ -1299,7 +1298,7 @@ package drand
 //
 //	certsDir := path.Join(tmpPath, "certs")
 //	require.NoError(t, os.Mkdir(certsDir, 0o740))
-//	l := testlogger.New(t)
+//	l := log.New(nil, log.DebugLevel, true)
 //
 //	ins := make([]*drandInstance, 0, n)
 //	for i := 1; i <= n; i++ {
@@ -1364,7 +1363,7 @@ package drand
 //		t.Skip("skipping test in short mode.")
 //	}
 //
-//	l := testlogger.New(t)
+//	l := log.New(nil, log.DebugLevel, true)
 //	sch, err := crypto.GetSchemeFromEnv()
 //	require.NoError(t, err)
 //	beaconID := test.GetBeaconIDFromEnv()
@@ -1465,7 +1464,7 @@ package drand
 //		t.Skip("skipping test in short mode.")
 //	}
 //
-//	l := testlogger.New(t)
+//	l := log.New(nil, log.DebugLevel, true)
 //	sch, err := crypto.GetSchemeFromEnv()
 //	require.NoError(t, err)
 //	beaconID := test.GetBeaconIDFromEnv()

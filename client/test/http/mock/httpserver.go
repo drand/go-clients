@@ -8,17 +8,17 @@ import (
 	"time"
 
 	localClient "github.com/drand/drand-cli/client"
-	"github.com/drand/drand/common"
-	"github.com/drand/drand/common/chain"
-	"github.com/drand/drand/common/client"
-	dhttp "github.com/drand/drand/handler/http"
-	"github.com/drand/drand/protobuf/drand"
-	"github.com/drand/drand/test/mock"
+	"github.com/drand/drand/v2/common"
+	"github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/common/client"
+	dhttp "github.com/drand/drand/v2/handler/http"
+	"github.com/drand/drand/v2/protobuf/drand"
+	"github.com/drand/drand/v2/test/mock"
 	clock "github.com/jonboulle/clockwork"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 
-	"github.com/drand/drand/crypto"
+	"github.com/drand/drand/v2/crypto"
 )
 
 // NewMockHTTPPublicServer creates a mock drand HTTP server for testing.

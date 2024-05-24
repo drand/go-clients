@@ -4,19 +4,20 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"github.com/drand/drand/common/key"
-	"github.com/drand/drand/crypto"
-	"github.com/stretchr/testify/require"
 	"path"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/drand/drand/v2/common/key"
+	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/drand/v2/crypto"
+	"github.com/stretchr/testify/require"
+
 	"github.com/drand/drand-cli/client"
 	"github.com/drand/drand-cli/client/test/result/mock"
-	"github.com/drand/drand/common/chain"
-	client2 "github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/testlogger"
+	"github.com/drand/drand/v2/common/chain"
+	client2 "github.com/drand/drand/v2/common/client"
 )
 
 type mockClient struct {
@@ -98,7 +99,7 @@ func TestWatchRetryOnClose(t *testing.T) {
 	c := &mockClient{chainInfo, watchF}
 
 	td := t.TempDir()
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	gr, err := NewGossipRelayNode(lg, &GossipRelayConfig{
 		ChainHash:    hex.EncodeToString(chainInfo.Hash()),
 		Addr:         "/ip4/0.0.0.0/tcp/0",

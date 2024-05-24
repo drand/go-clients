@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/drand/drand-cli/client/test/result/mock"
-	commonutils "github.com/drand/drand/common"
-	chain2 "github.com/drand/drand/common/chain"
-	"github.com/drand/drand/common/client"
+	commonutils "github.com/drand/drand/v2/common"
+	chain2 "github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/common/client"
 )
 
 // Client provide a mocked client interface

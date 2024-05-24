@@ -6,7 +6,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/drand/drand/common"
+	"github.com/drand/drand/v2/common"
 )
 
 // Automatically set through -ldflags
@@ -24,27 +24,20 @@ var verboseFlag = &cli.BoolFlag{
 	EnvVars: []string{"DRAND_VERBOSE"},
 }
 
-var nodeFlag = &cli.StringFlag{
-	Name:    "nodes",
-	Usage:   "Contact the nodes at the given list of whitespace-separated addresses which have to be present in group.toml.",
-	EnvVars: []string{"DRAND_NODES"},
+var relayFlag = &cli.StringSliceFlag{
+	Name:    "relays",
+	Usage:   "Contact the HTTP relay at the given URL address. Can be specified multiple times to try multiple relays.",
+	EnvVars: []string{"DRAND_HTTP_RELAY"},
 }
 
 var roundFlag = &cli.IntFlag{
 	Name: "round",
-	Usage: "Request the public randomness generated at round num. If the drand beacon does not have the requested value," +
-		" it returns an error. If not specified, the current randomness is returned.",
+	Usage: "Request the public randomness generated at round num. If the requested value doesn't exist yet," +
+		" it returns an error. If not specified or 0, the latest beacon is returned.",
 	EnvVars: []string{"DRAND_ROUND"},
 }
 
-var hashOnly = &cli.BoolFlag{
-	Name:    "hash",
-	Usage:   "Only print the hash of the group file",
-	EnvVars: []string{"DRAND_HASH"},
-}
-
-// TODO (DLSNIPER): This is a duplicate of the hashInfoReq. Should these be merged into a single flag?
-var hashInfoNoReq = &cli.StringFlag{
+var hashInfoFlag = &cli.StringFlag{
 	Name:    "chain-hash",
 	Usage:   "The hash of the chain info",
 	EnvVars: []string{"DRAND_CHAIN_HASH"},
@@ -78,14 +71,14 @@ var appCommands = []*cli.Command{
 					"beacon via TLS and falls back to plaintext communication " +
 					"if the contacted node has not activated TLS in which case " +
 					"it prints a warning.\n",
-				Flags:  toArray(roundFlag, nodeFlag),
+				Flags:  toArray(roundFlag, relayFlag, jsonFlag),
 				Action: getPublicRandomness,
 			},
 			{
 				Name:      "chain-info",
 				Usage:     "Get the binding chain information that this node participates to",
 				ArgsUsage: "`ADDRESS1` `ADDRESS2` ... provides the addresses of the node to try to contact to.",
-				Flags:     toArray(hashOnly, hashInfoNoReq),
+				Flags:     toArray(hashInfoFlag, relayFlag, jsonFlag),
 				Action:    getChainInfo,
 			},
 		},
@@ -97,7 +90,7 @@ func CLI() *cli.App {
 	version := common.GetAppVersion()
 
 	app := cli.NewApp()
-	app.Name = "drand"
+	app.Name = "drand-client"
 
 	// See https://cli.urfave.org/v2/examples/bash-completions/#enabling for how to turn on.
 	app.EnableBashCompletion = true

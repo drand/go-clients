@@ -177,8 +177,8 @@ import (
 
 	"github.com/drand/drand-cli/client"
 	p2pClient "github.com/drand/drand-cli/client/lp2p"
-	"github.com/drand/drand/common/chain"
-	"github.com/drand/drand/common/log"
+	"github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/common/log"
 )
 
 const (
@@ -235,7 +235,7 @@ import (
   "github.com/drand/drand-cli/client"
   "github.com/drand/drand-cli/client/http"
   gclient "github.com/drand/drand-cli/client/lp2p"
-  "github.com/drand/drand/common/log"
+  "github.com/drand/drand/v2/common/log"
 )
 
 const (

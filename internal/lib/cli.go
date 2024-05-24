@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/drand/drand/common/key"
+	"github.com/drand/drand/v2/common/key"
 	"github.com/google/uuid"
 	bds "github.com/ipfs/go-ds-badger2"
 	clock "github.com/jonboulle/clockwork"
@@ -20,14 +20,14 @@ import (
 	"github.com/urfave/cli/v2"
 
 	pubClient "github.com/drand/drand-cli/client"
-	"github.com/drand/drand-cli/client/grpc"
 	http2 "github.com/drand/drand-cli/client/http"
 	gclient "github.com/drand/drand-cli/client/lp2p"
+	"github.com/drand/drand-cli/internal/grpc"
 	"github.com/drand/drand-cli/internal/lp2p"
-	commonutils "github.com/drand/drand/common"
-	chainCommon "github.com/drand/drand/common/chain"
-	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/log"
+	commonutils "github.com/drand/drand/v2/common"
+	chainCommon "github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/log"
 )
 
 var (

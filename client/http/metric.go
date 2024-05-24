@@ -3,10 +3,11 @@ package http
 import (
 	"context"
 	"fmt"
-	"github.com/drand/drand/common"
 	"time"
 
-	chain2 "github.com/drand/drand/common/client"
+	"github.com/drand/drand/v2/common"
+
+	chain2 "github.com/drand/drand/v2/common/client"
 )
 
 // MeasureHeartbeats periodically tracks latency observed on a set of HTTP clients
@@ -32,13 +33,14 @@ const HeartbeatInterval = 10 * time.Second
 
 // TODO add metrics back in
 func (c *HealthMetrics) startObserve(ctx context.Context) {
+	// we check all clients within HeartbeatInterval
+	interval := time.Duration(int64(HeartbeatInterval) / int64(len(c.clients)))
 	for {
-		select {
-		case <-ctx.Done():
+		// check if ctx is Done
+		if ctx.Err() != nil {
 			return
-		default:
 		}
-		time.Sleep(time.Duration(int64(HeartbeatInterval) / int64(len(c.clients))))
+		time.Sleep(interval)
 		n := c.next % len(c.clients)
 
 		httpClient, ok := c.clients[n].(*httpClient)

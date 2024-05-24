@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/log"
+	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/log"
 )
 
 const (

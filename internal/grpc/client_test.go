@@ -3,7 +3,7 @@ package grpc
 import (
 	"bytes"
 	"context"
-	"github.com/drand/drand/common/log"
+	"github.com/drand/drand/v2/common/log"
 	clock "github.com/jonboulle/clockwork"
 	"sync"
 	"testing"
@@ -13,8 +13,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/drand/drand/crypto"
-	"github.com/drand/drand/test/mock"
+	"github.com/drand/drand/v2/crypto"
+	"github.com/drand/drand/v2/test/mock"
 )
 
 func TestClient(t *testing.T) {

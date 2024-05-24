@@ -26,7 +26,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 
-	dlog "github.com/drand/drand/common/log"
+	dlog "github.com/drand/drand/v2/common/log"
 )
 
 const (

@@ -9,10 +9,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/drand/drand/common/chain"
-	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/crypto"
+	"github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/drand/v2/crypto"
 )
 
 const clientStartupTimeoutDefault = time.Second * 5

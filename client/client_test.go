@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drand/drand/common/key"
+	"github.com/drand/drand/v2/common/key"
+	"github.com/drand/drand/v2/common/log"
 
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
@@ -16,15 +17,14 @@ import (
 	clientMock "github.com/drand/drand-cli/client/mock"
 	httpmock "github.com/drand/drand-cli/client/test/http/mock"
 	"github.com/drand/drand-cli/client/test/result/mock"
-	"github.com/drand/drand/common/chain"
-	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/testlogger"
-	"github.com/drand/drand/crypto"
+	"github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/crypto"
 )
 
 func TestClientConstraints(t *testing.T) {
 	ctx := context.Background()
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	if _, e := client2.New(ctx, lg); e == nil {
 		t.Fatal("client can't be created without root of trust")
 	}
@@ -48,7 +48,7 @@ func TestClientConstraints(t *testing.T) {
 
 func TestClientMultiple(t *testing.T) {
 	ctx := context.Background()
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
@@ -96,7 +96,7 @@ func TestClientWithChainInfo(t *testing.T) {
 
 	ctx := context.Background()
 	chainInfo := fakeChainInfo(t)
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	hc, err := http.NewWithInfo(lg, "http://nxdomain.local/", chainInfo, nil)
 	require.NoError(t, err)
 	c, err := client2.New(ctx, lg, client2.WithChainInfo(chainInfo),
@@ -119,7 +119,7 @@ func TestClientCache(t *testing.T) {
 	addr1, chainInfo, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	httpClients := http.ForURLs(ctx, lg, []string{"http://" + addr1}, chainInfo.Hash())
 	if len(httpClients) == 0 {
 		t.Error("http clients is empty")
@@ -159,7 +159,7 @@ func TestClientWithoutCache(t *testing.T) {
 	addr1, chainInfo, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	httpClients := http.ForURLs(ctx, lg, []string{"http://" + addr1}, chainInfo.Hash())
 	if len(httpClients) == 0 {
 		t.Error("http clients is empty")
@@ -191,7 +191,7 @@ func TestClientWithoutCache(t *testing.T) {
 
 func TestClientWithWatcher(t *testing.T) {
 	ctx := context.Background()
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	info, results := mock.VerifiableResults(2, sch)
@@ -228,7 +228,7 @@ func TestClientWithWatcher(t *testing.T) {
 
 func TestClientWithWatcherCtorError(t *testing.T) {
 	ctx := context.Background()
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	watcherErr := errors.New("boom")
 	watcherCtor := func(chainInfo *chain.Info, _ client2.Cache) (client2.Watcher, error) {
 		return nil, watcherErr
@@ -247,7 +247,7 @@ func TestClientWithWatcherCtorError(t *testing.T) {
 
 func TestClientChainHashOverrideError(t *testing.T) {
 	ctx := context.Background()
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	chainInfo := fakeChainInfo(t)
 	_, err := client2.Wrap(
 		ctx,
@@ -266,7 +266,7 @@ func TestClientChainHashOverrideError(t *testing.T) {
 
 func TestClientChainInfoOverrideError(t *testing.T) {
 	ctx := context.Background()
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	chainInfo := fakeChainInfo(t)
 	_, err := client2.Wrap(
 		ctx,
@@ -285,7 +285,7 @@ func TestClientChainInfoOverrideError(t *testing.T) {
 
 func TestClientAutoWatch(t *testing.T) {
 	ctx := context.Background()
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
@@ -337,7 +337,7 @@ func TestClientAutoWatch(t *testing.T) {
 
 func TestClientAutoWatchRetry(t *testing.T) {
 	ctx := context.Background()
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 

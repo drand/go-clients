@@ -3,11 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
-	commonutils "github.com/drand/drand/common"
+	commonutils "github.com/drand/drand/v2/common"
 	"testing"
 	"time"
 
-	chain2 "github.com/drand/drand/common/client"
+	chain2 "github.com/drand/drand/v2/common/client"
 )
 
 func TestEmptyClient(t *testing.T) {

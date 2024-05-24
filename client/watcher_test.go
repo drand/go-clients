@@ -8,7 +8,7 @@ import (
 
 	clientMock "github.com/drand/drand-cli/client/mock"
 	"github.com/drand/drand-cli/client/test/result/mock"
-	"github.com/drand/drand/common/client"
+	"github.com/drand/drand/v2/common/client"
 )
 
 func TestWatcherWatch(t *testing.T) {

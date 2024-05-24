@@ -12,8 +12,8 @@ Example:
 	import (
 		"encoding/hex"
 
-		"github.com/drand/drand/client"
-		"github.com/drand/drand/client/grpc"
+		"github.com/drand/drand/v2/client"
+		"github.com/drand/drand/v2/client/grpc"
 	)
 
 	const (

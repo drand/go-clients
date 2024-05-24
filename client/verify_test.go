@@ -10,10 +10,9 @@ import (
 	client2 "github.com/drand/drand-cli/client"
 	clientMock "github.com/drand/drand-cli/client/mock"
 	"github.com/drand/drand-cli/client/test/result/mock"
-	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/common/testlogger"
-	"github.com/drand/drand/crypto"
+	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/drand/v2/crypto"
 )
 
 func mockClientWithVerifiableResults(ctx context.Context, t *testing.T, l log.Logger, n int, strictRounds bool) (client.Client, []mock.Result) {
@@ -49,7 +48,7 @@ func TestVerifyWithOldVerifiedResult(t *testing.T) {
 
 func VerifyFuncTest(t *testing.T, clients, upTo int) {
 	ctx := context.Background()
-	l := testlogger.New(t)
+	l := log.New(nil, log.DebugLevel, true)
 	c, results := mockClientWithVerifiableResults(ctx, t, l, clients, true)
 
 	res, err := c.Get(context.Background(), results[upTo].GetRound())
@@ -62,7 +61,7 @@ func VerifyFuncTest(t *testing.T, clients, upTo int) {
 
 func TestGetWithRoundMismatch(t *testing.T) {
 	ctx := context.Background()
-	l := testlogger.New(t)
+	l := log.New(nil, log.DebugLevel, true)
 	c, results := mockClientWithVerifiableResults(ctx, t, l, 5, false)
 	for i := 1; i < len(results); i++ {
 		results[i] = results[0]

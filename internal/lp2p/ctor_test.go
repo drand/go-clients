@@ -2,7 +2,7 @@ package lp2p
 
 import (
 	"fmt"
-	"github.com/drand/drand/common/log"
+	"github.com/drand/drand/v2/common/log"
 	"path"
 	"testing"
 )

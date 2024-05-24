@@ -11,7 +11,7 @@ import (
 
 	"github.com/drand/drand-cli/internal/lib"
 	"github.com/drand/drand-cli/internal/lp2p"
-	"github.com/drand/drand/common/log"
+	"github.com/drand/drand/v2/common/log"
 )
 
 // Automatically set through -ldflags

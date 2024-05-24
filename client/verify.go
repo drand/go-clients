@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/drand/drand/common"
-	chain2 "github.com/drand/drand/common/chain"
-	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/crypto"
+	"github.com/drand/drand/v2/common"
+	chain2 "github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/drand/v2/crypto"
 )
 
 type verifyingClient struct {

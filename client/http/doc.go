@@ -13,9 +13,9 @@ Example:
 		"context"
 		"encoding/hex"
 
-		"github.com/drand/drand/client"
-		"github.com/drand/drand/client/http"
-		"github.com/drand/drand/common/log"
+		"github.com/drand/drand/v2/client"
+		"github.com/drand/drand/v2/client/http"
+		"github.com/drand/drand/v2/common/log"
 	)
 
 	var urls = []string{

@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/drand/drand/common"
-	chain2 "github.com/drand/drand/common/chain"
-	"github.com/drand/drand/common/client"
+	"github.com/drand/drand/v2/common"
+	chain2 "github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/common/client"
 )
 
 const emptyClientStringerValue = "EmptyClient"

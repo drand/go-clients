@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drand/drand/common/client"
+	"github.com/drand/drand/v2/common/client"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	ma "github.com/multiformats/go-multiaddr"
@@ -13,7 +13,7 @@ import (
 
 //
 //func TestGRPCClientTestFunc(t *testing.T) {
-//	lg := testlogger.New(t)
+//	lg := log.New(nil, log.DebugLevel, true)
 //	// start mock drand node
 //	sch, err := crypto.GetSchemeFromEnv()
 //	require.NoError(t, err)
@@ -111,7 +111,7 @@ func drain(t *testing.T, ch <-chan client.Result, timeout time.Duration) {
 //	}
 //
 //	ctx := context.Background()
-//	lg := testlogger.New(t)
+//	lg := log.New(nil, log.DebugLevel, true)
 //	sch, err := crypto.GetSchemeFromEnv()
 //	require.NoError(t, err)
 //
@@ -176,7 +176,7 @@ func drain(t *testing.T, ch <-chan client.Result, timeout time.Duration) {
 //	if err != nil {
 //		return nil, err
 //	}
-//	lg := testlogger.New(t)
+//	lg := log.New(nil, log.DebugLevel, true)
 //	priv, err := lp2p.LoadOrCreatePrivKey(path.Join(identityDir, "identity.key"), lg)
 //	if err != nil {
 //		return nil, err

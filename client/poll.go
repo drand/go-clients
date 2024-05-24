@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	commonutils "github.com/drand/drand/common"
-	chain2 "github.com/drand/drand/common/chain"
-	"github.com/drand/drand/common/client"
-	"github.com/drand/drand/common/log"
+	commonutils "github.com/drand/drand/v2/common"
+	chain2 "github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/log"
 )
 
 // PollingWatcher generalizes the `Watch` interface for clients which learn new values

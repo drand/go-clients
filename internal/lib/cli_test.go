@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drand/drand/test/mock"
+	"github.com/drand/drand/v2/test/mock"
 
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
@@ -19,10 +19,9 @@ import (
 
 	"github.com/drand/drand-cli/client"
 	httpmock "github.com/drand/drand-cli/client/test/http/mock"
-	commonutils "github.com/drand/drand/common"
-	"github.com/drand/drand/common/log"
-	"github.com/drand/drand/common/testlogger"
-	"github.com/drand/drand/crypto"
+	commonutils "github.com/drand/drand/v2/common"
+	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/drand/v2/crypto"
 )
 
 var (
@@ -53,7 +52,7 @@ func run(l log.Logger, args []string) error {
 
 func TestClientLib(t *testing.T) {
 	opts = []client.Option{}
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	err := run(lg, []string{"mock-client"})
 	if err == nil {
 		t.Fatal("need to specify a connection method.", err)
@@ -107,7 +106,7 @@ func TestClientLib(t *testing.T) {
 }
 
 func TestClientLibGroupConfTOML(t *testing.T) {
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	err := run(lg, []string{"mock-client", "--relay", fakeGossipRelayAddr, "--group-conf", groupTOMLPath()})
 	if err != nil {
 		t.Fatal(err)
@@ -115,7 +114,7 @@ func TestClientLibGroupConfTOML(t *testing.T) {
 }
 
 func TestClientLibGroupConfJSON(t *testing.T) {
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
@@ -140,7 +139,7 @@ func TestClientLibGroupConfJSON(t *testing.T) {
 }
 
 func TestClientLibChainHashOverrideError(t *testing.T) {
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	err := run(lg, []string{
 		"mock-client",
 		"--relay",
@@ -157,7 +156,7 @@ func TestClientLibChainHashOverrideError(t *testing.T) {
 }
 
 func TestClientLibListenPort(t *testing.T) {
-	lg := testlogger.New(t)
+	lg := log.New(nil, log.DebugLevel, true)
 	err := run(lg, []string{"mock-client", "--relay", fakeGossipRelayAddr, "--port", "0.0.0.0:0", "--group-conf", groupTOMLPath()})
 	if err != nil {
 		t.Fatal(err)
