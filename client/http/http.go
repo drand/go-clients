@@ -50,9 +50,6 @@ func New(ctx context.Context, l log.Logger, url string, chainHash []byte, transp
 		done:   make(chan struct{}),
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-
 	chainInfo, err := c.FetchChainInfo(ctx, chainHash)
 	if err != nil {
 		return nil, err
