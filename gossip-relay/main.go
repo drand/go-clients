@@ -80,15 +80,13 @@ var runCmd = &cli.Command{
 	Flags: append(lib.ClientFlags, []cli.Flag{
 		idFlag,
 		peerWithFlag,
-		lib.HashListFlag,
-		lib.GroupConfListFlag,
 		storeFlag,
 		listenFlag,
 		metricsFlag,
 	}...),
 	Action: func(cctx *cli.Context) error {
-		if cctx.IsSet(lib.HashFlag.Name) {
-			fmt.Printf("--%s is deprecated. Use --%s or --%s instead\n", lib.HashFlag.Name, lib.HashListFlag.Name, lib.GroupConfListFlag.Name)
+		if cctx.IsSet(lib.HashFlag.Name) || cctx.IsSet(lib.GroupConfFlag.Name) {
+			fmt.Printf("--%s and --%s are deprecated. Use --%s or --%s instead\n", lib.HashFlag.Name, lib.GroupConfFlag, lib.HashListFlag.Name, lib.GroupConfListFlag.Name)
 		}
 
 		switch {

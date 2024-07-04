@@ -33,22 +33,21 @@ import (
 var (
 	// URLFlag is the CLI flag for root URL(s) for fetching randomness.
 	URLFlag = &cli.StringSliceFlag{
-		Name:    "url",
-		Usage:   "root URL(s) for fetching randomness",
-		Aliases: []string{"http-relay-failover"}, // DEPRECATED
+		Name:  "url",
+		Usage: "root URL(s) for fetching randomness",
 	}
 	// GRPCConnectFlag is the CLI flag for host:port to dial a gRPC randomness
 	// provider.
 	GRPCConnectFlag = &cli.StringFlag{
-		Name:    "grpc-connect",
-		Usage:   "host:port to dial a gRPC randomness provider",
-		Aliases: []string{"connect"}, // DEPRECATED
+		Name:  "grpc-connect",
+		Usage: "host:port to dial a gRPC randomness provider",
 	}
 	// HashFlag is the CLI flag for the hash (in hex) of the targeted chain.
 	HashFlag = &cli.StringFlag{
 		Name:    "hash",
-		Usage:   "The hash (in hex) of the chain to follow",
+		Usage:   "The hash (in hex) of the chain to follow. Deprecated and replaced by hash-list to support multiple chains",
 		Aliases: []string{"chain-hash"},
+		Hidden:  true,
 	}
 	// HashListFlag is the CLI flag for the hashes list (in hex) for the relay to follow.
 	HashListFlag = &cli.StringSliceFlag{
@@ -59,7 +58,8 @@ var (
 	GroupConfFlag = &cli.PathFlag{
 		Name: "group-conf",
 		Usage: "Path to a drand group configuration (TOML encoded) or chain info (JSON encoded)," +
-			" can be used instead of `-hash` flag to verify the chain.",
+			" can be used instead of `-hash` flag to verify the chain. Deprecated and replaced by group-conf-list to support multiple chains",
+		Hidden: true,
 	}
 	// GroupConfListFlag is like GroupConfFlag but for a list values.
 	GroupConfListFlag = &cli.StringSliceFlag{
@@ -97,6 +97,8 @@ var ClientFlags = []cli.Flag{
 	URLFlag,
 	GRPCConnectFlag,
 	HashFlag,
+	HashListFlag,
+	GroupConfListFlag,
 	GroupConfFlag,
 	InsecureFlag,
 	RelayFlag,
@@ -109,6 +111,7 @@ var ClientFlags = []cli.Flag{
 func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) (client.Client, error) {
 	ctx := c.Context
 	clients := make([]client.Client, 0)
+	l := log.DefaultLogger()
 
 	var info *chainCommon.Info
 	var err error
@@ -116,6 +119,7 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 	if groupPath := c.Path(GroupConfFlag.Name); groupPath != "" {
 		info, err = chainInfoFromGroupTOML(groupPath)
 		if err != nil {
+			l.Infow("Got a group conf file that is not a toml file. Trying it as a ChainInfo json file.", "path", groupPath)
 			info, err = chainInfoFromChainInfoJSON(groupPath)
 			if info == nil || err != nil {
 				return nil, fmt.Errorf("failed to decode group (%s) : %w", groupPath, err)
@@ -127,8 +131,6 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 	if info != nil {
 		hash = info.Hash()
 	}
-
-	l := log.DefaultLogger()
 
 	grc, info, err := buildGrpcClient(c, info)
 	if err != nil {

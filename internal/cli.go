@@ -60,17 +60,13 @@ var appCommands = []*cli.Command{
 	{
 		Name: "get",
 		Usage: "get allows for public information retrieval from a remote " +
-			"drand node.\n",
+			"drand http-relay.\n",
 		Subcommands: []*cli.Command{
 			{
 				Name: "public",
 				Usage: "Get the latest public randomness from the drand " +
-					"beacon and verify it against the collective public key " +
-					"as specified in group.toml. Only one node is contacted by " +
-					"default. This command attempts to connect to the drand " +
-					"beacon via TLS and falls back to plaintext communication " +
-					"if the contacted node has not activated TLS in which case " +
-					"it prints a warning.\n",
+					"relay and verify it against the collective public key " +
+					"as specified in the chain-info.\n",
 				Flags:  toArray(roundFlag, relayFlag, jsonFlag),
 				Action: getPublicRandomness,
 			},
@@ -134,13 +130,16 @@ func toArray(flags ...cli.Flag) []cli.Flag {
 
 // TODO
 func getPublicRandomness(c *cli.Context) error {
+	fmt.Println("currently unimplemented")
 	return nil
 }
 
 func getChainInfo(c *cli.Context) error {
+	fmt.Println("currently unimplemented")
 	return nil
 }
 
 func schemesCmd(c *cli.Context) error {
+	fmt.Println("currently unimplemented")
 	return nil
 }
