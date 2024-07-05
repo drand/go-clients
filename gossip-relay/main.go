@@ -203,13 +203,24 @@ var clientCmd = &cli.Command{
 	Action: func(cctx *cli.Context) error {
 		lg := log.New(nil, log.DefaultLevel, false)
 		cctx.Context = log.ToContext(cctx.Context, lg)
+		if cctx.IsSet(lib.GroupConfListFlag.Name) {
+			groupConfs := cctx.StringSlice(lib.GroupConfListFlag.Name)
+			if len(groupConfs) != 1 {
+				return fmt.Errorf("please specify a single valid chain using the --%s flag with the client command")
+			}
+
+			if cctx.IsSet(lib.GroupConfFlag.Name) {
+				return fmt.Errorf("please do not use both --%s and --%s at the same time", lib.GroupConfFlag.Name, lib.GroupConfListFlag.Name)
+			}
+			cctx.Set(lib.GroupConfFlag.Name, groupConfs[0])
+		}
 		c, err := lib.Create(cctx, false)
 		if err != nil {
 			return fmt.Errorf("constructing client: %w", err)
 		}
 
 		for rand := range c.Watch(cctx.Context) {
-			lg.Infow("", "client", "got randomness", "round", rand.GetRound(), "signature", rand.GetSignature()[:16])
+			lg.Infow("", "client", "got randomness", "round", rand.GetRound(), "signature", hex.EncodeToString(rand.GetSignature()))
 		}
 
 		return nil
