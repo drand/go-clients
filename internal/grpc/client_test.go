@@ -3,11 +3,13 @@ package grpc
 import (
 	"bytes"
 	"context"
-	"github.com/drand/drand/v2/common/log"
-	clock "github.com/jonboulle/clockwork"
 	"sync"
 	"testing"
 	"time"
+
+	clock "github.com/jonboulle/clockwork"
+
+	"github.com/drand/drand/v2/common/log"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"

@@ -68,10 +68,10 @@ func TestClientLib(t *testing.T) {
 	go grpcLis.Start()
 	defer grpcLis.Stop(context.Background())
 
-	args := []string{"mock-client", "--url", "http://" + addr, "--grpc-connect", grpcLis.Addr(), "--insecure"}
+	args := []string{"mock-client", "--url", "http://" + addr, "--insecure"}
 	err = run(lg, args)
 	if err != nil {
-		t.Fatal("GRPC should work", err)
+		t.Fatal("HTTP should work", err)
 	}
 
 	args = []string{"mock-client", "--url", "https://" + addr}
@@ -152,14 +152,6 @@ func TestClientLibChainHashOverrideError(t *testing.T) {
 	if !errors.Is(err, commonutils.ErrInvalidChainHash) {
 		t.Log(fakeChainHash)
 		t.Fatal("expected error from mismatched chain hashes. Got: ", err)
-	}
-}
-
-func TestClientLibListenPort(t *testing.T) {
-	lg := log.New(nil, log.DebugLevel, true)
-	err := run(lg, []string{"mock-client", "--relay", fakeGossipRelayAddr, "--port", "0.0.0.0:0", "--group-conf", groupTOMLPath()})
-	if err != nil {
-		t.Fatal(err)
 	}
 }
 

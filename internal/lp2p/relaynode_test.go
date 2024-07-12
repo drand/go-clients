@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/drand/drand/v2/common/key"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
-	"github.com/stretchr/testify/require"
 
 	"github.com/drand/drand-cli/client"
 	"github.com/drand/drand-cli/client/test/result/mock"

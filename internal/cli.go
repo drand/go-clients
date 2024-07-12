@@ -2,10 +2,15 @@ package drand
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"sync"
 
 	"github.com/urfave/cli/v2"
 
+	client "github.com/drand/drand/v2/common/client"
+
+	"github.com/drand/drand-cli/internal/lib"
 	"github.com/drand/drand/v2/common"
 )
 
@@ -24,38 +29,6 @@ var verboseFlag = &cli.BoolFlag{
 	EnvVars: []string{"DRAND_VERBOSE"},
 }
 
-var relayFlag = &cli.StringSliceFlag{
-	Name:    "relays",
-	Usage:   "Contact the HTTP relay at the given URL address. Can be specified multiple times to try multiple relays.",
-	EnvVars: []string{"DRAND_HTTP_RELAY"},
-}
-
-var roundFlag = &cli.IntFlag{
-	Name: "round",
-	Usage: "Request the public randomness generated at round num. If the requested value doesn't exist yet," +
-		" it returns an error. If not specified or 0, the latest beacon is returned.",
-	EnvVars: []string{"DRAND_ROUND"},
-}
-
-var hashInfoFlag = &cli.StringFlag{
-	Name:    "chain-hash",
-	Usage:   "The hash of the chain info",
-	EnvVars: []string{"DRAND_CHAIN_HASH"},
-}
-
-var jsonFlag = &cli.BoolFlag{
-	Name:    "json",
-	Usage:   "Set the output as json format",
-	EnvVars: []string{"DRAND_JSON"},
-}
-
-var beaconIDFlag = &cli.StringFlag{
-	Name:    "id",
-	Usage:   "Indicates the id of the beacon chain you're interested in",
-	Value:   "",
-	EnvVars: []string{"DRAND_ID"},
-}
-
 var appCommands = []*cli.Command{
 	{
 		Name: "get",
@@ -67,14 +40,15 @@ var appCommands = []*cli.Command{
 				Usage: "Get the latest public randomness from the drand " +
 					"relay and verify it against the collective public key " +
 					"as specified in the chain-info.\n",
-				Flags:  toArray(roundFlag, relayFlag, jsonFlag),
-				Action: getPublicRandomness,
+				Flags:     toArray(lib.URLFlag, lib.JSONFlag, lib.InsecureFlag, lib.HashListFlag),
+				ArgsUsage: "--url url1 --url url2 ROUND... uses the first working relay to query round number ROUND",
+				Action:    getPublicRandomness,
 			},
 			{
 				Name:      "chain-info",
-				Usage:     "Get the binding chain information that this node participates to",
-				ArgsUsage: "`ADDRESS1` `ADDRESS2` ... provides the addresses of the node to try to contact to.",
-				Flags:     toArray(hashInfoFlag, relayFlag, jsonFlag),
+				Usage:     "Get beacon information",
+				ArgsUsage: "--url url1 --url url2 ... uses the first working relay",
+				Flags:     toArray(lib.URLFlag, lib.JSONFlag, lib.InsecureFlag, lib.HashListFlag),
 				Action:    getChainInfo,
 			},
 		},
@@ -128,18 +102,46 @@ func toArray(flags ...cli.Flag) []cli.Flag {
 	return flags
 }
 
-// TODO
-func getPublicRandomness(c *cli.Context) error {
-	fmt.Println("currently unimplemented")
+func instantiateClient(cctx *cli.Context) (client.Client, error) {
+	c, err := lib.Create(cctx, false)
+	if err != nil {
+		return nil, fmt.Errorf("constructing client: %w", err)
+	}
+
+	_, err = c.Info(cctx.Context)
+	if err != nil {
+		return nil, fmt.Errorf("cannot retrieve chain info from relay: %w", err)
+	}
+
+	return c, nil
+}
+
+func getPublicRandomness(cctx *cli.Context) error {
+	c, err := instantiateClient(cctx)
+	if err != nil {
+		return err
+	}
+	if len(os.Args) > 1 {
+		log.Fatal("please specify a single round as positional argument")
+	}
+
+	round, err := c.Get(cctx.Context, 0)
+	if err != nil {
+		return err
+	}
+	fmt.Println(round)
 	return nil
 }
 
-func getChainInfo(c *cli.Context) error {
-	fmt.Println("currently unimplemented")
-	return nil
-}
-
-func schemesCmd(c *cli.Context) error {
-	fmt.Println("currently unimplemented")
+func getChainInfo(cctx *cli.Context) error {
+	c, err := instantiateClient(cctx)
+	if err != nil {
+		return err
+	}
+	info, err := c.Info(cctx.Context)
+	if err != nil {
+		return err
+	}
+	fmt.Println(info)
 	return nil
 }

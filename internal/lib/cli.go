@@ -11,13 +11,14 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/drand/drand/v2/common/key"
 	"github.com/google/uuid"
 	bds "github.com/ipfs/go-ds-badger2"
 	clock "github.com/jonboulle/clockwork"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/urfave/cli/v2"
+
+	"github.com/drand/drand/v2/common/key"
 
 	pubClient "github.com/drand/drand-cli/client"
 	http2 "github.com/drand/drand-cli/client/http"
@@ -95,14 +96,12 @@ var (
 // ClientFlags is a list of common flags for client creation
 var ClientFlags = []cli.Flag{
 	URLFlag,
-	GRPCConnectFlag,
 	HashFlag,
 	HashListFlag,
 	GroupConfListFlag,
 	GroupConfFlag,
 	InsecureFlag,
 	RelayFlag,
-	PortFlag,
 	JSONFlag,
 }
 
@@ -111,7 +110,7 @@ var ClientFlags = []cli.Flag{
 func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) (client.Client, error) {
 	ctx := c.Context
 	clients := make([]client.Client, 0)
-	l := log.DefaultLogger()
+	l := log.New(nil, log.DebugLevel, false)
 
 	var info *chainCommon.Info
 	var err error

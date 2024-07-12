@@ -13,11 +13,12 @@ import (
 
 	client2 "github.com/drand/drand-cli/client"
 
+	json "github.com/nikkolasg/hexjson"
+
 	"github.com/drand/drand/v2/common"
 	chain2 "github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
-	json "github.com/nikkolasg/hexjson"
 )
 
 var errClientClosed = fmt.Errorf("client closed")
@@ -44,7 +45,7 @@ func New(ctx context.Context, l log.Logger, url string, chainHash []byte, transp
 	agent := fmt.Sprintf("drand-client-%s/1.0", path.Base(pn))
 	c := &httpClient{
 		root:   url,
-		client: createClient(url, transport),
+		client: createClient(transport),
 		l:      l,
 		Agent:  agent,
 		done:   make(chan struct{}),
@@ -76,7 +77,7 @@ func NewWithInfo(l log.Logger, url string, info *chain2.Info, transport nhttp.Ro
 	c := &httpClient{
 		root:      url,
 		chainInfo: info,
-		client:    createClient(url, transport),
+		client:    createClient(transport),
 		l:         l,
 		Agent:     agent,
 		done:      make(chan struct{}),
@@ -137,7 +138,7 @@ func Ping(ctx context.Context, root string) error {
 }
 
 // createClient creates an HTTP client around a transport, allows to easily instrument it later
-func createClient(url string, transport nhttp.RoundTripper) *nhttp.Client {
+func createClient(transport nhttp.RoundTripper) *nhttp.Client {
 	hc := nhttp.Client{}
 	hc.Timeout = defaultHTTTPTimeout
 	hc.Jar = nhttp.DefaultClient.Jar

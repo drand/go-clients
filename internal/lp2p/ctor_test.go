@@ -2,9 +2,10 @@ package lp2p
 
 import (
 	"fmt"
-	"github.com/drand/drand/v2/common/log"
 	"path"
 	"testing"
+
+	"github.com/drand/drand/v2/common/log"
 )
 
 func TestCreateThenLoadPrivKey(t *testing.T) {

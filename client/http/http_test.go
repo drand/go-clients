@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drand/drand/v2/common/log"
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
+
+	"github.com/drand/drand/v2/common/log"
 
 	"github.com/drand/drand-cli/client"
 	"github.com/drand/drand-cli/client/test/http/mock"

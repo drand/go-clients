@@ -7,6 +7,10 @@ import (
 	"testing"
 	"time"
 
+	clock "github.com/jonboulle/clockwork"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
+
 	localClient "github.com/drand/drand-cli/client"
 	"github.com/drand/drand/v2/common"
 	"github.com/drand/drand/v2/common/chain"
@@ -14,9 +18,6 @@ import (
 	dhttp "github.com/drand/drand/v2/handler/http"
 	"github.com/drand/drand/v2/protobuf/drand"
 	"github.com/drand/drand/v2/test/mock"
-	clock "github.com/jonboulle/clockwork"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/peer"
 
 	"github.com/drand/drand/v2/crypto"
 )
@@ -92,10 +93,10 @@ func (d *drandProxy) Get(ctx context.Context, round uint64) (client.Result, erro
 		return nil, err
 	}
 	return &localClient.RandomData{
-		Rnd:               resp.Round,
-		Random:            resp.Randomness,
-		Sig:               resp.Signature,
-		PreviousSignature: resp.PreviousSignature,
+		Rnd:               resp.GetRound(),
+		Random:            crypto.RandomnessFromSignature(resp.GetSignature()),
+		Sig:               resp.GetSignature(),
+		PreviousSignature: resp.GetPreviousSignature(),
 	}, nil
 }
 

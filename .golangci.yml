@@ -1,0 +1,195 @@
+issues:
+  # Let us display all issues of one type at once
+  max-same-issues: 0
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - bodyclose
+        - cyclop
+        - errcheck
+        - forbidigo
+        - goconst
+        - gocyclo
+        - mnd
+        - gosec
+        - nilnil
+        - noctx
+        - revive
+        - depguard
+        - lll # signatures are long lines
+    - path: _test\.go
+      text: "SA1019" # we still want to test deprecated functions
+    - path: cmd
+      linters:
+        - forbidigo # we use Println in our UX
+    - path: internal/lib
+      linters:
+        - forbidigo # we use Println in our UX
+    - path: internal/drand-cli
+      linters:
+        - forbidigo # we use Println in our UX
+        - goconst # we re-use some strings in our flags
+run:
+  skip-dirs:
+    - demo
+
+linters:
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    #- containedctx #TODO could be enabled
+    #- contextcheck #TODO could be enabled
+    #- cyclop
+    #- deadcode # Deprecated
+    - decorder
+    # - depguard
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    # - execinquery # deprecated
+    - exhaustive
+    # - exhaustivestruct
+    # - exhaustruct
+    - exportloopref
+    - forbidigo
+    # - forcetypeassert #TODO could be enabled
+    - funlen
+    # - gci
+    # - gochecknoglobals
+    - gochecknoinits
+    # - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    # - godot
+    # - godox #TODO could be enabled
+    # - goerr113
+    - gofmt
+    # - gofumpt
+    - goheader
+    - goimports
+    # - golint # Deprecated
+    # - gomnd # deprecated, replaced by mnd
+    # - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - grouper
+    # - ifshort
+    - importas
+    - ineffassign
+    - interfacebloat
+    # - interfacer # Deprecated
+    # - ireturn
+    - lll
+    - loggercheck
+    - maintidx
+    - makezero
+    # - maligned #Deprecated
+    - mnd
+    - misspell
+    - nakedret
+    # - nestif
+    - nilerr
+    - nilnil
+    # - nlreturn
+    - noctx
+    - nolintlint
+    # - nonamedreturns
+    # - nosnakecase
+    - nosprintfhostport
+    # - paralleltest #TODO could be enabled
+    - prealloc
+    - predeclared
+    # - promlinter #TODO could be enabled
+    - reassign
+    - revive
+    - rowserrcheck
+    # - scopelint # Deprecated
+    - sqlclosecheck
+    - staticcheck
+    # - structcheck # Deprecated
+    - stylecheck
+    # - tagliatelle
+    - tenv
+    - testableexamples
+    # - testpackage
+    # - thelper #TODO could be enabled
+    - tparallel
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    # - varcheck # Deprecated
+    # - varnamelen
+    - wastedassign
+    - whitespace
+    # - wrapcheck
+    # - wsl
+
+linters-settings:
+  dupl:
+    threshold: 100
+  exhaustive:
+    default-signifies-exhaustive: false
+  funlen:
+    lines: 100
+    statements: 50
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+  gocyclo:
+    min-complexity: 15
+  goimports:
+    local-prefixes: github.com/drand
+  golint:
+    min-confidence: 0
+  mnd:
+    # don't include the "operation" and "assign"
+    checks:
+      - argument
+      - case
+      - condition
+      - return
+  lll:
+    line-length: 140
+#  maligned: # Deprecated
+#    suggest-new: true
+#  govet:
+#    check-shadowing: true  #TODO could be enabled
+#    enable:
+#      - fieldalignment #TODO could be enabled
+  revive:
+    enable:
+      - var-naming
+  misspell:
+    locale: US
+  nolintlint:
+    allow-leading-space: true # don't require machine-readable nolint directives (i.e. with no leading space)
+    allow-unused: false # report any unused nolint directives
+    require-explanation: false # don't require an explanation for nolint directives
+    require-specific: false # don't require nolint directives to be specific about which linter is being skipped

@@ -206,7 +206,7 @@ var clientCmd = &cli.Command{
 		if cctx.IsSet(lib.GroupConfListFlag.Name) {
 			groupConfs := cctx.StringSlice(lib.GroupConfListFlag.Name)
 			if len(groupConfs) != 1 {
-				return fmt.Errorf("please specify a single valid chain using the --%s flag with the client command")
+				return fmt.Errorf("please specify a single valid chain using the --%s flag with the client command", lib.GroupConfListFlag.Name)
 			}
 
 			if cctx.IsSet(lib.GroupConfFlag.Name) {

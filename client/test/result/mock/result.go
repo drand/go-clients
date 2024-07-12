@@ -99,7 +99,7 @@ func VerifiableResults(count int, sch *crypto.Scheme) (*chain.Info, []Result) {
 		var msg []byte
 		if sch.Name == crypto.DefaultSchemeID {
 			// we're in chained mode
-			msg = sha256Hash(previous[:], i+1)
+			msg = sha256Hash(previous, i+1)
 		} else {
 			// we are in unchained mode
 			msg = sha256Hash(nil, i+1)
@@ -123,7 +123,7 @@ func VerifiableResults(count int, sch *crypto.Scheme) (*chain.Info, []Result) {
 		// chained mode
 		if sch.Name == crypto.DefaultSchemeID {
 			previous = make([]byte, len(sig))
-			copy(previous[:], sig)
+			copy(previous, sig)
 		} else {
 			previous = nil
 		}

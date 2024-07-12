@@ -3,9 +3,10 @@ package client
 import (
 	"context"
 	"fmt"
-	commonutils "github.com/drand/drand/v2/common"
 	"testing"
 	"time"
+
+	commonutils "github.com/drand/drand/v2/common"
 
 	chain2 "github.com/drand/drand/v2/common/client"
 )

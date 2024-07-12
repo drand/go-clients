@@ -17,6 +17,7 @@ import (
 	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/drand/v2/crypto"
 	"github.com/drand/drand/v2/protobuf/drand"
 )
 
@@ -199,13 +200,13 @@ func (c *Client) Watch(ctx context.Context) <-chan client.Result {
 					return
 				}
 				dat := &client2.RandomData{
-					Rnd:               resp.Round,
-					Random:            resp.Randomness,
-					Sig:               resp.Signature,
-					PreviousSignature: resp.PreviousSignature,
+					Rnd:               resp.GetRound(),
+					Random:            crypto.RandomnessFromSignature(resp.GetSignature()),
+					Sig:               resp.GetSignature(),
+					PreviousSignature: resp.GetPreviousSignature(),
 				}
 				if c.cache != nil {
-					c.cache.Add(resp.Round, dat)
+					c.cache.Add(resp.GetRound(), dat)
 				}
 				select {
 				case outerCh <- dat:

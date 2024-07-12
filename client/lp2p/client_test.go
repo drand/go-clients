@@ -5,14 +5,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drand/drand/v2/common/client"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	ma "github.com/multiformats/go-multiaddr"
+
+	"github.com/drand/drand/v2/common/client"
 )
 
 //
-//func TestGRPCClientTestFunc(t *testing.T) {
+// func TestGRPCClientTestFunc(t *testing.T) {
 //	lg := log.New(nil, log.DebugLevel, true)
 //	// start mock drand node
 //	sch, err := crypto.GetSchemeFromEnv()
@@ -105,7 +106,7 @@ func drain(t *testing.T, ch <-chan client.Result, timeout time.Duration) {
 }
 
 //
-//func TestHTTPClientTestFunc(t *testing.T) {
+// func TestHTTPClientTestFunc(t *testing.T) {
 //	if testing.Short() {
 //		t.Skip("skipping slow test in short mode.")
 //	}
@@ -169,7 +170,7 @@ func drain(t *testing.T, ch <-chan client.Result, timeout time.Duration) {
 //	drain(t, ch, 5*time.Second)
 //}
 
-//func newTestClient(t *testing.T, relayMultiaddr []ma.Multiaddr, info *chain2.Info, clk clock.Clock) (*Client, error) {
+// func newTestClient(t *testing.T, relayMultiaddr []ma.Multiaddr, info *chain2.Info, clk clock.Clock) (*Client, error) {
 //	dataDir := t.TempDir()
 //	identityDir := t.TempDir()
 //	ds, err := bds.NewDatastore(dataDir, nil)
