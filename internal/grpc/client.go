@@ -12,6 +12,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	grpcInsec "google.golang.org/grpc/credentials/insecure"
 
+	"github.com/drand/drand/v2/crypto"
+
 	localClient "github.com/drand/drand-cli/client"
 	commonutils "github.com/drand/drand/v2/common"
 	"github.com/drand/drand/v2/common/chain"
@@ -42,7 +44,7 @@ func New(address string, insecure bool, chainHash []byte) (client.Client, error)
 		grpc.WithUnaryInterceptor(grpcProm.UnaryClientInterceptor),
 		grpc.WithStreamInterceptor(grpcProm.StreamClientInterceptor),
 	)
-	conn, err := grpc.Dial(address, opts...)
+	conn, err := grpc.NewClient(address, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -52,10 +54,10 @@ func New(address string, insecure bool, chainHash []byte) (client.Client, error)
 
 func asRD(r *drand.PublicRandResponse) *localClient.RandomData {
 	return &localClient.RandomData{
-		Rnd:               r.Round,
-		Random:            r.Randomness,
-		Sig:               r.Signature,
-		PreviousSignature: r.PreviousSignature,
+		Rnd:               r.GetRound(),
+		Random:            crypto.RandomnessFromSignature(r.GetSignature()),
+		Sig:               r.GetSignature(),
+		PreviousSignature: r.GetPreviousSignature(),
 	}
 }
 

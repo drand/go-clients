@@ -3,9 +3,10 @@ package drand
 import (
 	"fmt"
 	"log"
-	"os"
+	"strconv"
 	"sync"
 
+	json "github.com/nikkolasg/hexjson"
 	"github.com/urfave/cli/v2"
 
 	client "github.com/drand/drand/v2/common/client"
@@ -23,12 +24,6 @@ var (
 
 var SetVersionPrinter sync.Once
 
-var verboseFlag = &cli.BoolFlag{
-	Name:    "verbose",
-	Usage:   "If set, verbosity is at the debug level",
-	EnvVars: []string{"DRAND_VERBOSE"},
-}
-
 var appCommands = []*cli.Command{
 	{
 		Name: "get",
@@ -40,7 +35,7 @@ var appCommands = []*cli.Command{
 				Usage: "Get the latest public randomness from the drand " +
 					"relay and verify it against the collective public key " +
 					"as specified in the chain-info.\n",
-				Flags:     toArray(lib.URLFlag, lib.JSONFlag, lib.InsecureFlag, lib.HashListFlag),
+				Flags:     toArray(lib.URLFlag, lib.JSONFlag, lib.InsecureFlag, lib.HashListFlag, lib.VerboseFlag),
 				ArgsUsage: "--url url1 --url url2 ROUND... uses the first working relay to query round number ROUND",
 				Action:    getPublicRandomness,
 			},
@@ -48,7 +43,7 @@ var appCommands = []*cli.Command{
 				Name:      "chain-info",
 				Usage:     "Get beacon information",
 				ArgsUsage: "--url url1 --url url2 ... uses the first working relay",
-				Flags:     toArray(lib.URLFlag, lib.JSONFlag, lib.InsecureFlag, lib.HashListFlag),
+				Flags:     toArray(lib.URLFlag, lib.JSONFlag, lib.InsecureFlag, lib.HashListFlag, lib.VerboseFlag),
 				Action:    getChainInfo,
 			},
 		},
@@ -71,7 +66,7 @@ func CLI() *cli.App {
 		}
 	})
 
-	app.ExitErrHandler = func(context *cli.Context, err error) {
+	app.ExitErrHandler = func(_ *cli.Context, _ error) {
 		// override to prevent default behavior of calling OS.exit(1),
 		// when tests expect to be able to run multiple commands.
 	}
@@ -88,14 +83,8 @@ func CLI() *cli.App {
 		appComm[i] = &v
 	}
 	app.Commands = appComm
-	// we need to copy the underlying flags to avoid races
-	verbFlag := *verboseFlag
-	app.Flags = toArray(&verbFlag)
-	return app
-}
 
-func isVerbose(c *cli.Context) bool {
-	return c.IsSet(verboseFlag.Name)
+	return app
 }
 
 func toArray(flags ...cli.Flag) []cli.Flag {
@@ -121,15 +110,23 @@ func getPublicRandomness(cctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if len(os.Args) > 1 {
+	if cctx.Args().Len() > 1 {
 		log.Fatal("please specify a single round as positional argument")
 	}
 
-	round, err := c.Get(cctx.Context, 0)
+	var r uint64
+	if val := cctx.Args().Get(0); val != "" {
+		r, err = strconv.ParseUint(val, 10, 64)
+		if err != nil {
+			return err
+		}
+	}
+
+	round, err := c.Get(cctx.Context, r)
 	if err != nil {
 		return err
 	}
-	fmt.Println(round)
+	json.NewEncoder(cctx.App.Writer).Encode(round)
 	return nil
 }
 
@@ -142,6 +139,6 @@ func getChainInfo(cctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(info)
+	info.ToJSON(cctx.App.Writer, nil)
 	return nil
 }

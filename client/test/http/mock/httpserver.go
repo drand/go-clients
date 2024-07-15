@@ -23,7 +23,7 @@ import (
 )
 
 // NewMockHTTPPublicServer creates a mock drand HTTP server for testing.
-func NewMockHTTPPublicServer(t *testing.T, badSecondRound bool, sch *crypto.Scheme, clk clock.Clock) (string, *chain.Info, context.CancelFunc) {
+func NewMockHTTPPublicServer(t *testing.T, badSecondRound bool, sch *crypto.Scheme, clk clock.Clock) (string, *chain.Info, context.CancelFunc, func(bool)) {
 	t.Helper()
 
 	server := mock.NewMockServer(t, badSecondRound, sch, clk)
@@ -67,7 +67,7 @@ func NewMockHTTPPublicServer(t *testing.T, badSecondRound bool, sch *crypto.Sche
 	return listener.Addr().String(), chainInfo, func() {
 		httpServer.Shutdown(context.Background())
 		cancel()
-	}
+	}, server.(mock.Service).EmitRand
 }
 
 // drandProxy is used as a proxy between a Public service (e.g. the node as a server)

@@ -33,6 +33,7 @@ issues:
 run:
   skip-dirs:
     - demo
+    - test
 
 linters:
   enable:
@@ -59,7 +60,7 @@ linters:
     # - exhaustivestruct
     # - exhaustruct
     - exportloopref
-    - forbidigo
+    # - forbidigo
     # - forcetypeassert #TODO could be enabled
     - funlen
     # - gci
@@ -96,7 +97,7 @@ linters:
     - maintidx
     - makezero
     # - maligned #Deprecated
-    - mnd
+    #- mnd
     - misspell
     - nakedret
     # - nestif

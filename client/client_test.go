@@ -53,10 +53,10 @@ func TestClientMultiple(t *testing.T) {
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
 
-	addr1, chainInfo, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr1, chainInfo, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
-	addr2, chaininfo2, cancel2 := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr2, chaininfo2, cancel2, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel2()
 
 	t.Log("created mockhttppublicserver", "addr", addr1, "chaininfo", chainInfo)
@@ -116,7 +116,7 @@ func TestClientCache(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr1, chainInfo, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr1, chainInfo, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	lg := log.New(nil, log.DebugLevel, true)
@@ -156,7 +156,7 @@ func TestClientWithoutCache(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr1, chainInfo, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr1, chainInfo, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	lg := log.New(nil, log.DebugLevel, true)
@@ -289,7 +289,7 @@ func TestClientAutoWatch(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr1, chainInfo, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr1, chainInfo, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	httpClient := http.ForURLs(ctx, lg, []string{"http://" + addr1}, chainInfo.Hash())

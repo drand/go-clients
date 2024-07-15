@@ -319,3 +319,11 @@ func WithAutoWatchRetry(interval time.Duration) Option {
 		return nil
 	}
 }
+
+// WithPrometheus specifies a registry into which to report metrics
+func WithPrometheus(r prometheus.Registerer) Option {
+	return func(cfg *clientConfig) error {
+		cfg.prometheus = r
+		return nil
+	}
+}

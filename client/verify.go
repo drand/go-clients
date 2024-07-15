@@ -102,7 +102,7 @@ func asRandomData(r client.Result) *RandomData {
 	}
 	rd = &RandomData{
 		Rnd:    r.GetRound(),
-		Random: r.GetRandomness(),
+		Random: crypto.RandomnessFromSignature(r.GetSignature()),
 		Sig:    r.GetSignature(),
 	}
 	if rp, ok := r.(resultWithPreviousSignature); ok {

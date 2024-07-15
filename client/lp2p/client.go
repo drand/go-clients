@@ -156,7 +156,7 @@ func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache clie
 // UnsubFunc is a cancel function for pubsub subscription
 type UnsubFunc func()
 
-// Sub subscribes to notfications about new randomness.
+// Sub subscribes to notifications about new randomness.
 // Client instance owns the channel after it is passed to Sub function,
 // thus the channel should not be closed by library user
 //
@@ -217,9 +217,6 @@ func (c *Client) Watch(ctx context.Context) <-chan client.Result {
 			case <-ctx.Done():
 				c.log.Debugw("client.Watch done")
 				end()
-				// drain leftover on innerCh
-				for range innerCh {
-				}
 				c.log.Debugw("client.Watch finished draining the innerCh")
 				return
 			}

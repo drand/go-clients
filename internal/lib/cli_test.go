@@ -61,7 +61,7 @@ func TestClientLib(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr, info, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr, info, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	grpcLis, _ := mock.NewMockGRPCPublicServer(t, lg, ":0", false, sch, clk)
@@ -71,7 +71,7 @@ func TestClientLib(t *testing.T) {
 	args := []string{"mock-client", "--url", "http://" + addr, "--insecure"}
 	err = run(lg, args)
 	if err != nil {
-		t.Fatal("HTTP should work", err)
+		t.Fatal("HTTP should work. err:", err)
 	}
 
 	args = []string{"mock-client", "--url", "https://" + addr}
@@ -119,7 +119,7 @@ func TestClientLibGroupConfJSON(t *testing.T) {
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
 
-	addr, info, cancel := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr, info, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	var b bytes.Buffer

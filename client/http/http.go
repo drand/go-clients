@@ -12,6 +12,7 @@ import (
 	"time"
 
 	client2 "github.com/drand/drand-cli/client"
+	"github.com/drand/drand/v2/crypto"
 
 	json "github.com/nikkolasg/hexjson"
 
@@ -20,6 +21,8 @@ import (
 	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 )
+
+var _ client.Client = &httpClient{}
 
 var errClientClosed = fmt.Errorf("client closed")
 
@@ -258,6 +261,7 @@ func (h *httpClient) FetchChainInfo(ctx context.Context, chainHash []byte) (*cha
 			resC <- httpInfoResponse{nil, err}
 			return
 		}
+
 		resC <- httpInfoResponse{chainInfo, nil}
 	}()
 
@@ -315,6 +319,8 @@ func (h *httpClient) Get(ctx context.Context, round uint64) (client.Result, erro
 			resC <- httpGetResponse{nil, fmt.Errorf("insufficient response - signature is not present")}
 			return
 		}
+
+		randResp.Random = crypto.RandomnessFromSignature(randResp.GetSignature())
 
 		resC <- httpGetResponse{&randResp, nil}
 	}()

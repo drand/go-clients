@@ -3,6 +3,7 @@ package lib
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net"
 	nhttp "net/http"
@@ -91,6 +92,12 @@ var (
 		Name:  "json",
 		Usage: "Set the output as json format",
 	}
+
+	VerboseFlag = &cli.BoolFlag{
+		Name:    "verbose",
+		Usage:   "If set, verbosity is at the debug level",
+		EnvVars: []string{"DRAND_VERBOSE"},
+	}
 )
 
 // ClientFlags is a list of common flags for client creation
@@ -103,6 +110,7 @@ var ClientFlags = []cli.Flag{
 	InsecureFlag,
 	RelayFlag,
 	JSONFlag,
+	VerboseFlag,
 }
 
 // Create builds a client, and can be invoked from a cli action supplied
@@ -110,7 +118,13 @@ var ClientFlags = []cli.Flag{
 func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) (client.Client, error) {
 	ctx := c.Context
 	clients := make([]client.Client, 0)
-	l := log.New(nil, log.DebugLevel, false)
+	var level int
+	if c.Bool(VerboseFlag.Name) {
+		level = log.DebugLevel
+	} else {
+		level = log.WarnLevel
+	}
+	l := log.New(nil, level, false)
 
 	var info *chainCommon.Info
 	var err error
@@ -166,6 +180,15 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 	}
 	if len(gc) > 0 {
 		clients = append(clients, gc...)
+	}
+	if info != nil && hash != nil && !bytes.Equal(hash, info.Hash()) {
+		return nil, fmt.Errorf(
+			"%w for beacon %s : expected %v != info %v",
+			commonutils.ErrInvalidChainHash,
+			info.ID,
+			hex.EncodeToString(hash),
+			hex.EncodeToString(info.Hash()),
+		)
 	}
 
 	gopt, err := buildGossipClient(c, l)
@@ -237,7 +260,16 @@ func buildHTTPClients(c *cli.Context, l log.Logger, hash []byte, withInstrumenta
 		clients = append(clients, hc)
 	}
 
+	if len(skipped) == len(c.StringSlice(URLFlag.Name)) {
+		return nil, nil, errors.New("all URLs failed to be used for creating a http client")
+	}
+
 	if info != nil {
+		if hash != nil && !bytes.Equal(hash, info.Hash()) {
+			l.Warnw("mismatch between retrieved chain info hash and provided hash", "chainInfo", info.Hash(), "provided", hash)
+			return nil, nil, errors.New("mismatch between retrieved chain info and provided hash")
+		}
+
 		for _, url := range skipped {
 			hc, err = http2.NewWithInfo(l, url, info, nhttp.DefaultTransport)
 			if err != nil {
@@ -245,9 +277,6 @@ func buildHTTPClients(c *cli.Context, l log.Logger, hash []byte, withInstrumenta
 				continue
 			}
 			clients = append(clients, hc)
-		}
-		if !bytes.Equal(hash, info.Hash()) {
-			l.Warnw("mismatch between retrieved chain info hash and provided hash", "chainInfo", info.Hash(), "provided", hash)
 		}
 	}
 

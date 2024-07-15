@@ -1,15 +1,29 @@
 package lp2p
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"path"
+	"strconv"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/consul/sdk/freeport"
+	bds "github.com/ipfs/go-ds-badger2"
+	clock "github.com/jonboulle/clockwork"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	ma "github.com/multiformats/go-multiaddr"
+	"github.com/stretchr/testify/require"
 
+	dhttp "github.com/drand/drand-cli/client/http"
+	httpmock "github.com/drand/drand-cli/client/test/http/mock"
+	"github.com/drand/drand-cli/internal/lp2p"
+	chain2 "github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/drand/v2/crypto"
 )
 
 //
@@ -105,108 +119,103 @@ func drain(t *testing.T, ch <-chan client.Result, timeout time.Duration) {
 	}
 }
 
-//
-// func TestHTTPClientTestFunc(t *testing.T) {
-//	if testing.Short() {
-//		t.Skip("skipping slow test in short mode.")
-//	}
-//
-//	ctx := context.Background()
-//	lg := log.New(nil, log.DebugLevel, true)
-//	sch, err := crypto.GetSchemeFromEnv()
-//	require.NoError(t, err)
-//
-//	clk := clock.NewFakeClockAt(time.Now())
-//
-//	addr, chainInfo, stop, emit := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
-//	defer stop()
-//
-//	dataDir := t.TempDir()
-//	identityDir := t.TempDir()
-//
-//	httpClient, err := dhttp.New(ctx, lg, "http://"+addr, chainInfo.Hash(), http.DefaultTransport)
-//	require.NoError(t, err)
-//
-//	cfg := &lp2p.GossipRelayConfig{
-//		ChainHash:    chainInfo.HashString(),
-//		PeerWith:     nil,
-//		Addr:         "/ip4/127.0.0.1/tcp/" + test.FreePort(),
-//		DataDir:      dataDir,
-//		IdentityPath: path.Join(identityDir, "identity.key"),
-//		Client:       httpClient,
-//	}
-//	g, err := lp2p.NewGossipRelayNode(lg, cfg)
-//	if err != nil {
-//		t.Fatalf("gossip relay node (%v)", err)
-//	}
-//	defer g.Shutdown()
-//
-//	c, err := newTestClient(t, g.Multiaddrs(), chainInfo, clk)
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	defer c.Close()
-//
-//	ctx, cancel := context.WithCancel(ctx)
-//	emit(false)
-//	ch := c.Watch(ctx)
-//	for i := 0; i < 3; i++ {
-//		// pub sub polls every 200ms, but the other http one polls every period
-//		time.Sleep(1250 * time.Millisecond)
-//		emit(false)
-//		select {
-//		case r, ok := <-ch:
-//			if !ok {
-//				t.Fatal("expected randomness")
-//			} else {
-//				t.Log("received randomness", r.GetRound())
-//			}
-//		case <-time.After(8 * time.Second):
-//			t.Fatal("timeout.")
-//		}
-//	}
-//	emit(true)
-//	cancel()
-//	drain(t, ch, 5*time.Second)
-//}
+func TestHTTPClientTestFunc(t *testing.T) {
+	ctx := context.Background()
+	lg := log.New(nil, log.DebugLevel, true)
+	sch, err := crypto.GetSchemeFromEnv()
+	require.NoError(t, err)
 
-// func newTestClient(t *testing.T, relayMultiaddr []ma.Multiaddr, info *chain2.Info, clk clock.Clock) (*Client, error) {
-//	dataDir := t.TempDir()
-//	identityDir := t.TempDir()
-//	ds, err := bds.NewDatastore(dataDir, nil)
-//	if err != nil {
-//		return nil, err
-//	}
-//	lg := log.New(nil, log.DebugLevel, true)
-//	priv, err := lp2p.LoadOrCreatePrivKey(path.Join(identityDir, "identity.key"), lg)
-//	if err != nil {
-//		return nil, err
-//	}
-//	h, ps, err := lp2p.ConstructHost(
-//		ds,
-//		priv,
-//		"/ip4/0.0.0.0/tcp/"+test.FreePort(),
-//		relayMultiaddr,
-//		lg,
-//	)
-//	if err != nil {
-//		return nil, err
-//	}
-//	relayPeerID, err := peerIDFromMultiaddr(relayMultiaddr[0])
-//	if err != nil {
-//		return nil, err
-//	}
-//	err = waitForConnection(h, relayPeerID, time.Minute)
-//	if err != nil {
-//		return nil, err
-//	}
-//	c, err := NewWithPubsub(lg, ps, info, nil, clk, 100)
-//	if err != nil {
-//		return nil, err
-//	}
-//	c.SetLog(lg)
-//	return c, nil
-//}
+	clk := clock.NewFakeClockAt(time.Now())
+
+	addr, chainInfo, stop, emit := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	defer stop()
+
+	dataDir := t.TempDir()
+	identityDir := t.TempDir()
+
+	httpClient, err := dhttp.New(ctx, lg, "http://"+addr, chainInfo.Hash(), http.DefaultTransport)
+	require.NoError(t, err)
+
+	cfg := &lp2p.GossipRelayConfig{
+		ChainHash:    chainInfo.HashString(),
+		PeerWith:     nil,
+		Addr:         "/ip4/127.0.0.1/tcp/" + strconv.Itoa(freeport.GetOne(t)),
+		DataDir:      dataDir,
+		IdentityPath: path.Join(identityDir, "identity.key"),
+		Client:       httpClient,
+	}
+	g, err := lp2p.NewGossipRelayNode(lg, cfg)
+	if err != nil {
+		t.Fatalf("gossip relay node (%v)", err)
+	}
+	defer g.Shutdown()
+
+	c, err := newTestClient(t, g.Multiaddrs(), chainInfo, clk)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+
+	ctx, cancel := context.WithCancel(ctx)
+	emit(false)
+	ch := c.Watch(ctx)
+	for i := 0; i < 3; i++ {
+		// pub sub polls every 200ms, but the other http one polls every period
+		time.Sleep(1250 * time.Millisecond)
+		emit(false)
+		select {
+		case r, ok := <-ch:
+			if !ok {
+				t.Fatal("expected randomness")
+			} else {
+				t.Log("received randomness", r.GetRound())
+			}
+		case <-time.After(8 * time.Second):
+			t.Fatal("timeout.")
+		}
+	}
+	emit(true)
+	cancel()
+	drain(t, ch, 5*time.Second)
+}
+
+func newTestClient(t *testing.T, relayMultiaddr []ma.Multiaddr, info *chain2.Info, clk clock.Clock) (*Client, error) {
+	dataDir := t.TempDir()
+	identityDir := t.TempDir()
+	ds, err := bds.NewDatastore(dataDir, nil)
+	if err != nil {
+		return nil, err
+	}
+	lg := log.New(nil, log.DebugLevel, true)
+	priv, err := lp2p.LoadOrCreatePrivKey(path.Join(identityDir, "identity.key"), lg)
+	if err != nil {
+		return nil, err
+	}
+	h, ps, err := lp2p.ConstructHost(
+		ds,
+		priv,
+		"/ip4/0.0.0.0/tcp/"+strconv.Itoa(freeport.GetOne(t)),
+		relayMultiaddr,
+		lg,
+	)
+	if err != nil {
+		return nil, err
+	}
+	relayPeerID, err := peerIDFromMultiaddr(relayMultiaddr[0])
+	if err != nil {
+		return nil, err
+	}
+	err = waitForConnection(h, relayPeerID, time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	c, err := NewWithPubsub(lg, ps, info, nil, clk, 100)
+	if err != nil {
+		return nil, err
+	}
+	c.SetLog(lg)
+	return c, nil
+}
 
 func peerIDFromMultiaddr(addr ma.Multiaddr) (peer.ID, error) {
 	ai, err := peer.AddrInfoFromP2pAddr(addr)

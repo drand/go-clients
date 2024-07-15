@@ -23,7 +23,7 @@ func TestHTTPClient(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr, chainInfo, cancel := mock.NewMockHTTPPublicServer(t, true, sch, clk)
+	addr, chainInfo, cancel, _ := mock.NewMockHTTPPublicServer(t, true, sch, clk)
 	defer cancel()
 
 	err = IsServerReady(ctx, addr)
@@ -67,7 +67,7 @@ func TestHTTPGetLatest(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr, chainInfo, cancel := mock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr, chainInfo, cancel, _ := mock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	err = IsServerReady(ctx, addr)
@@ -106,7 +106,7 @@ func TestForURLsCreation(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr, chainInfo, cancel := mock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr, chainInfo, cancel, _ := mock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	err = IsServerReady(ctx, addr)
@@ -132,7 +132,7 @@ func TestHTTPWatch(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr, chainInfo, cancel := mock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr, chainInfo, cancel, _ := mock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	err = IsServerReady(ctx, addr)
@@ -167,7 +167,7 @@ func TestHTTPClientClose(t *testing.T) {
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
 	clk := clock.NewFakeClockAt(time.Now())
-	addr, chainInfo, cancel := mock.NewMockHTTPPublicServer(t, false, sch, clk)
+	addr, chainInfo, cancel, _ := mock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
 	err = IsServerReady(ctx, addr)

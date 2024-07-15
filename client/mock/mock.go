@@ -12,6 +12,8 @@ import (
 	"github.com/drand/drand/v2/common/client"
 )
 
+var _ client.Client = &Client{}
+
 // Client provide a mocked client interface
 //
 //nolint:gocritic

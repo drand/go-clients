@@ -1,5 +1,9 @@
 package client
 
+import (
+	"github.com/drand/drand/v2/crypto"
+)
+
 // RandomData holds the full random response from the server, including data needed
 // for validation.
 type RandomData struct {
@@ -27,5 +31,8 @@ func (r *RandomData) GetPreviousSignature() []byte {
 
 // GetRandomness exports the randomness using the legacy SHA256 derivation path
 func (r *RandomData) GetRandomness() []byte {
-	return r.Random
+	if r.Random != nil {
+		return r.Random
+	}
+	return crypto.RandomnessFromSignature(r.GetSignature())
 }

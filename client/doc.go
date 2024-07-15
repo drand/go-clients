@@ -34,7 +34,7 @@ Example:
 	}
 
 The "From" option allows you to specify clients that work over particular
-transports. HTTP, gRPC and libp2p PubSub clients are provided in drand's
+transports. HTTP, gRPC and libp2p PubSub clients are provided as
 subpackages https://pkg.go.dev/github.com/drand/drand-cli/internal/client/http,
 https://pkg.go.dev/github.com/drand/drand-cli/internal/client/grpc and
 https://pkg.go.dev/github.com/drand/drand-cli/internal/lp2p/clientlp2p/client
