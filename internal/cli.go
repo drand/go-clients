@@ -135,10 +135,11 @@ func getChainInfo(cctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
 	info, err := c.Info(cctx.Context)
 	if err != nil {
 		return err
 	}
-	info.ToJSON(cctx.App.Writer, nil)
-	return nil
+
+	return info.ToJSON(cctx.App.Writer, nil)
 }

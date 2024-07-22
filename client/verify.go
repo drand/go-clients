@@ -98,6 +98,7 @@ type resultWithPreviousSignature interface {
 func asRandomData(r client.Result) *RandomData {
 	rd, ok := r.(*RandomData)
 	if ok {
+		rd.Random = crypto.RandomnessFromSignature(rd.GetSignature())
 		return rd
 	}
 	rd = &RandomData{

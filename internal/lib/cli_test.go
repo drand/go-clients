@@ -64,6 +64,8 @@ func TestClientLib(t *testing.T) {
 	addr, info, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
+	time.Sleep(time.Second)
+
 	grpcLis, _ := mock.NewMockGRPCPublicServer(t, lg, ":0", false, sch, clk)
 	go grpcLis.Start()
 	defer grpcLis.Stop(context.Background())

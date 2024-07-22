@@ -9,8 +9,10 @@ import (
 	clock "github.com/jonboulle/clockwork"
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
+	dnsaddr "github.com/multiformats/go-multiaddr-dns"
 	"google.golang.org/protobuf/proto"
 
 	client2 "github.com/drand/drand-cli/client"
@@ -61,12 +63,24 @@ func PubSubTopic(h string) string {
 	return fmt.Sprintf("/drand/pubsub/v0.0.0/%s", h)
 }
 
-// NewWithPubsub creates a gossip randomness client.
+// NewWithPubsub creates a gossip randomness client. If the logger l is nil, it will default to
+// a default Logger,
 //
-//nolint:funlen,lll // This is the correct function length
+//nolint:funlen,lll // This is a long line
 func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache client2.Cache, clk clock.Clock, bufferSize int) (*Client, error) {
 	if info == nil {
 		return nil, fmt.Errorf("no chain supplied for joining")
+	}
+
+	if l == nil {
+		l = log.DefaultLogger()
+	}
+
+	scheme, err := crypto.SchemeFromName(info.Scheme)
+	if err != nil {
+		l.Errorw("invalid scheme in info", "info", info, "scheme", info.Scheme, "err", err)
+
+		return nil, fmt.Errorf("invalid scheme in info: %w", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -128,7 +142,11 @@ func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache clie
 				continue
 			}
 
-			// TODO: verification, need to pass drand network public key in
+			err = scheme.VerifyBeacon(&rand, info.PublicKey)
+			if err != nil {
+				c.log.Errorw("invalid signature for beacon", "round", rand.GetRound(), "err", err)
+				continue
+			}
 
 			if c.latest >= rand.Round {
 				c.log.Debugw("received round older than the latest previously received one", "latest", c.latest, "round", rand.Round)
@@ -235,22 +253,30 @@ func (c *Client) Close() error {
 }
 
 // NewPubsub constructs a basic libp2p pubsub module for use with the drand client.
-func NewPubsub(ctx context.Context, listenAddr, relayAddr string) (*pubsub.PubSub, error) {
+// The local libp2p host is returned as well to allow to properly close it once done.
+func NewPubsub(ctx context.Context, listenAddr string, relayAddrs []string) (*pubsub.PubSub, host.Host, error) {
 	h, err := libp2p.New(libp2p.ListenAddrStrings(listenAddr))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	relayMa, err := multiaddr.NewMultiaddr(relayAddr)
-	if err != nil {
-		return nil, err
+	peers := make([]peer.AddrInfo, 0, len(relayAddrs))
+	for _, relayAddr := range relayAddrs {
+		// resolve the relay multiaddr to peers' AddrInfo
+		mas, err := dnsaddr.Resolve(ctx, multiaddr.StringCast(relayAddr))
+		if err != nil {
+			return nil, nil, fmt.Errorf("dnsaddr.Resolve error: %w", err)
+		}
+		for _, ma := range mas {
+			relayAi, err := peer.AddrInfoFromP2pAddr(ma)
+			if err != nil {
+				h.Close()
+				return nil, nil, fmt.Errorf("peer.AddrInfoFromP2pAddr error: %w", err)
+			}
+			peers = append(peers, *relayAi)
+		}
 	}
 
-	relayAi, err := peer.AddrInfoFromP2pAddr(relayMa)
-	if err != nil {
-		return nil, err
-	}
-
-	dps := []peer.AddrInfo{*relayAi}
-	return pubsub.NewGossipSub(ctx, h, pubsub.WithDirectPeers(dps))
+	ps, err := pubsub.NewGossipSub(ctx, h, pubsub.WithDirectPeers(peers))
+	return ps, h, err
 }

@@ -115,6 +115,8 @@ var ClientFlags = []cli.Flag{
 
 // Create builds a client, and can be invoked from a cli action supplied
 // with ClientFlags
+//
+//nolint:gocyclo
 func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) (client.Client, error) {
 	ctx := c.Context
 	clients := make([]client.Client, 0)

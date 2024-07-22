@@ -19,6 +19,10 @@ import (
 )
 
 func randomnessValidator(info *chain2.Info, cache client.Cache, c *Client, clk clock.Clock) pubsub.ValidatorEx {
+	var scheme *crypto.Scheme
+	if info != nil {
+		scheme, _ = crypto.GetSchemeByID(info.Scheme)
+	}
 	return func(ctx context.Context, p peer.ID, m *pubsub.Message) pubsub.ValidationResult {
 		rand := &drand.PublicRandResponse{}
 		err := proto.Unmarshal(m.Data, rand)
@@ -65,7 +69,7 @@ func randomnessValidator(info *chain2.Info, cache client.Cache, c *Client, clk c
 					return pubsub.ValidationReject
 				}
 				if current.GetRound() == rand.GetRound() &&
-					bytes.Equal(current.GetRandomness(), rand.GetRandomness()) &&
+					bytes.Equal(current.GetRandomness(), crypto.RandomnessFromSignature(rand.GetSignature())) &&
 					bytes.Equal(current.GetSignature(), rand.GetSignature()) &&
 					bytes.Equal(currentFull.PreviousSignature, rand.GetPreviousSignature()) {
 					c.log.Warnw("", "gossip validator", "ignore")
@@ -74,11 +78,6 @@ func randomnessValidator(info *chain2.Info, cache client.Cache, c *Client, clk c
 				c.log.Warnw("", "gossip validator", "reject")
 				return pubsub.ValidationReject
 			}
-		}
-		scheme, err := crypto.SchemeFromName(info.Scheme)
-		if err != nil {
-			c.log.Warnw("", "gossip validator", "reject", "err", err)
-			return pubsub.ValidationReject
 		}
 
 		err = scheme.VerifyBeacon(rand, info.PublicKey)

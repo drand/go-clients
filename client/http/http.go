@@ -34,7 +34,10 @@ const httpWaitInterval = 2 * time.Second
 const maxTimeoutHTTPRequest = 5 * time.Second
 
 // New creates a new client pointing to an HTTP endpoint
-func New(ctx context.Context, l log.Logger, url string, chainHash []byte, transport nhttp.RoundTripper) (client.Client, error) {
+func New(ctx context.Context, l log.Logger, url string, chainHash []byte, transport nhttp.RoundTripper) (*httpClient, error) {
+	if l == nil {
+		l = log.DefaultLogger()
+	}
 	if transport == nil {
 		transport = nhttp.DefaultTransport
 	}
@@ -64,7 +67,7 @@ func New(ctx context.Context, l log.Logger, url string, chainHash []byte, transp
 }
 
 // NewWithInfo constructs an http client when the group parameters are already known.
-func NewWithInfo(l log.Logger, url string, info *chain2.Info, transport nhttp.RoundTripper) (client.Client, error) {
+func NewWithInfo(l log.Logger, url string, info *chain2.Info, transport nhttp.RoundTripper) (*httpClient, error) {
 	if transport == nil {
 		transport = nhttp.DefaultTransport
 	}
