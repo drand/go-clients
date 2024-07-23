@@ -2,7 +2,6 @@ package lib
 
 import (
 	"bytes"
-	"context"
 	"encoding/hex"
 	"errors"
 	"os"
@@ -10,8 +9,6 @@ import (
 	"runtime"
 	"testing"
 	"time"
-
-	"github.com/drand/drand/v2/test/mock"
 
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
@@ -64,11 +61,7 @@ func TestClientLib(t *testing.T) {
 	addr, info, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
 	defer cancel()
 
-	time.Sleep(time.Second)
-
-	grpcLis, _ := mock.NewMockGRPCPublicServer(t, lg, ":0", false, sch, clk)
-	go grpcLis.Start()
-	defer grpcLis.Stop(context.Background())
+	t.Log("Started mockserver at", addr)
 
 	args := []string{"mock-client", "--url", "http://" + addr, "--insecure"}
 	err = run(lg, args)

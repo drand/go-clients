@@ -59,7 +59,7 @@ func New(ctx context.Context, l log.Logger, url string, chainHash []byte, transp
 
 	chainInfo, err := c.FetchChainInfo(ctx, chainHash)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("FetchChainInfo err: %w", err)
 	}
 	c.chainInfo = chainInfo
 
@@ -243,7 +243,7 @@ func (h *httpClient) FetchChainInfo(ctx context.Context, chainHash []byte) (*cha
 
 		chainInfo, err := chain2.InfoFromJSON(infoBody.Body)
 		if err != nil {
-			resC <- httpInfoResponse{nil, fmt.Errorf("decoding response [chain2.InfoFromJSON]: %w", err)}
+			resC <- httpInfoResponse{nil, fmt.Errorf("decoding response [InfoFromJSON]: %w", err)}
 			return
 		}
 

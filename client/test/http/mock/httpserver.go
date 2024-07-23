@@ -40,21 +40,26 @@ func NewMockHTTPPublicServer(t *testing.T, badSecondRound bool, sch *crypto.Sche
 	for i := 0; i < 3; i++ {
 		protoInfo, err := server.ChainInfo(ctx, &drand.ChainInfoRequest{})
 		if err != nil {
+			t.Error("MockServer.ChainInfo error:", err)
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}
 		chainInfo, err = chain.InfoFromProto(protoInfo)
 		if err != nil {
+			t.Error("MockServer.InfoFromProto error:", err)
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}
+
 		break
 	}
 	if chainInfo == nil {
 		t.Fatal("could not use server after 3 attempts.")
 	}
 
-	handler.RegisterNewBeaconHandler(client, chainInfo.HashString())
+	t.Log("MockServer.ChainInfo:", chainInfo)
+
+	handler.RegisterDefaultBeaconHandler(handler.RegisterNewBeaconHandler(client, chainInfo.HashString()))
 
 	listener, err := net.Listen("tcp", ":0")
 	if err != nil {

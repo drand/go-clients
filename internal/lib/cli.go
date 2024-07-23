@@ -132,6 +132,7 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 	var err error
 	var hash []byte
 	if groupPath := c.Path(GroupConfFlag.Name); groupPath != "" {
+		l.Debugw("parsing group-conf file")
 		info, err = chainInfoFromGroupTOML(groupPath)
 		if err != nil {
 			l.Infow("Got a group conf file that is not a toml file. Trying it as a ChainInfo json file.", "path", groupPath)
@@ -140,6 +141,8 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 				return nil, fmt.Errorf("failed to decode group (%s) : %w", groupPath, err)
 			}
 		}
+		l.Debugw("parsing group-conf file, successful")
+
 		opts = append(opts, pubClient.WithChainInfo(info))
 	}
 
@@ -154,6 +157,7 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 	if len(grc) > 0 {
 		clients = append(clients, grc...)
 	}
+	l.Debugw("built GRPC Client", "successful", len(grc))
 
 	if c.String(HashFlag.Name) != "" {
 		hash, err = hex.DecodeString(c.String(HashFlag.Name))
@@ -183,6 +187,8 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 	if len(gc) > 0 {
 		clients = append(clients, gc...)
 	}
+	l.Debugw("built HTTP Client", "successful", len(gc))
+
 	if info != nil && hash != nil && !bytes.Equal(hash, info.Hash()) {
 		return nil, fmt.Errorf(
 			"%w for beacon %s : expected %v != info %v",
@@ -244,9 +250,17 @@ func buildHTTPClients(c *cli.Context, l log.Logger, hash []byte, withInstrumenta
 	var hc client.Client
 	var info *chainCommon.Info
 
-	l.Infow("Building HTTP clients", "hash", len(hash), "urls", c.StringSlice(URLFlag.Name))
+	urls := c.StringSlice(URLFlag.Name)
 
-	for _, url := range c.StringSlice(URLFlag.Name) {
+	l.Infow("Building HTTP clients", "hash", len(hash), "urls", len(urls))
+
+	// we return an empty list if no URLs were provided
+	if len(urls) == 0 {
+		return clients, nil, nil
+	}
+
+	for _, url := range urls {
+		l.Debugw("trying to instantiate http client", "url", url)
 		hc, err = http2.New(ctx, l, url, hash, nhttp.DefaultTransport)
 		if err != nil {
 			l.Warnw("", "client", "failed to load URL", "url", url, "err", err)
@@ -262,6 +276,7 @@ func buildHTTPClients(c *cli.Context, l log.Logger, hash []byte, withInstrumenta
 		clients = append(clients, hc)
 	}
 
+	// do we want to error out or not if all provided URL failed to instantiate a client?
 	if len(skipped) == len(c.StringSlice(URLFlag.Name)) {
 		return nil, nil, errors.New("all URLs failed to be used for creating a http client")
 	}
@@ -272,10 +287,12 @@ func buildHTTPClients(c *cli.Context, l log.Logger, hash []byte, withInstrumenta
 			return nil, nil, errors.New("mismatch between retrieved chain info and provided hash")
 		}
 
+		// we re-try dialing the skipped remotes, just in case, but that's the last time, we won't be dialing these again
+		// later in case they fail.
 		for _, url := range skipped {
 			hc, err = http2.NewWithInfo(l, url, info, nhttp.DefaultTransport)
 			if err != nil {
-				l.Warnw("", "client", "failed to load URL", "url", url, "err", err)
+				l.Warnw("", "client", "failed to load URL again", "url", url, "err", err)
 				continue
 			}
 			clients = append(clients, hc)
