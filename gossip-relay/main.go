@@ -32,7 +32,7 @@ func main() {
 	// See https://cli.urfave.org/v2/examples/bash-completions/#enabling for how to turn on.
 	app.EnableBashCompletion = true
 
-	cli.VersionPrinter = func(c *cli.Context) {
+	cli.VersionPrinter = func(_ *cli.Context) {
 		fmt.Printf("drand gossip-relay relay %s (date %v, commit %v)\n", app.Version, buildDate, gitCommit)
 	}
 
@@ -86,7 +86,11 @@ var runCmd = &cli.Command{
 	}...),
 	Action: func(cctx *cli.Context) error {
 		if cctx.IsSet(lib.HashFlag.Name) || cctx.IsSet(lib.GroupConfFlag.Name) {
-			fmt.Printf("--%s and --%s are deprecated. Use --%s or --%s instead\n", lib.HashFlag.Name, lib.GroupConfFlag, lib.HashListFlag.Name, lib.GroupConfListFlag.Name)
+			fmt.Printf("--%s and --%s are deprecated. Use --%s or --%s instead\n",
+				lib.HashFlag.Name,
+				lib.GroupConfFlag,
+				lib.HashListFlag.Name,
+				lib.GroupConfListFlag.Name)
 		}
 
 		switch {
@@ -212,7 +216,9 @@ var clientCmd = &cli.Command{
 			if cctx.IsSet(lib.GroupConfFlag.Name) {
 				return fmt.Errorf("please do not use both --%s and --%s at the same time", lib.GroupConfFlag.Name, lib.GroupConfListFlag.Name)
 			}
-			cctx.Set(lib.GroupConfFlag.Name, groupConfs[0])
+			if err := cctx.Set(lib.GroupConfFlag.Name, groupConfs[0]); err != nil {
+				return fmt.Errorf("unable to set GroupConfFlag: %w", err)
+			}
 		}
 		c, err := lib.Create(cctx, false)
 		if err != nil {

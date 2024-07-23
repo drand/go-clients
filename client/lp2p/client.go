@@ -66,7 +66,7 @@ func PubSubTopic(h string) string {
 // NewWithPubsub creates a gossip randomness client. If the logger l is nil, it will default to
 // a default Logger,
 //
-//nolint:funlen,lll // This is a long line
+//nolint:funlen,lll,gocyclo // This is a long line
 func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache client2.Cache, clk clock.Clock, bufferSize int) (*Client, error) {
 	if info == nil {
 		return nil, fmt.Errorf("no chain supplied for joining")

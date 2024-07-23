@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	bds "github.com/ipfs/go-ds-badger2"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -35,7 +34,6 @@ type GossipRelayConfig struct {
 type GossipRelayNode struct {
 	l         log.Logger
 	bootstrap []ma.Multiaddr
-	ds        *bds.Datastore
 	priv      crypto.PrivKey
 	h         host.Host
 	ps        *pubsub.PubSub
@@ -55,17 +53,12 @@ func NewGossipRelayNode(l log.Logger, cfg *GossipRelayConfig) (*GossipRelayNode,
 		return nil, fmt.Errorf("parsing peer-with: %w", err)
 	}
 
-	ds, err := bds.NewDatastore(cfg.DataDir, nil)
-	if err != nil {
-		return nil, fmt.Errorf("opening datastore: %w", err)
-	}
-
 	priv, err := LoadOrCreatePrivKey(cfg.IdentityPath, l)
 	if err != nil {
 		return nil, fmt.Errorf("loading p2p key: %w", err)
 	}
 
-	h, ps, err := ConstructHost(ds, priv, cfg.Addr, bootstrap, l)
+	h, ps, err := ConstructHost(priv, cfg.Addr, bootstrap, l)
 	if err != nil {
 		return nil, fmt.Errorf("constructing host: %w", err)
 	}
@@ -87,7 +80,6 @@ func NewGossipRelayNode(l log.Logger, cfg *GossipRelayConfig) (*GossipRelayNode,
 	g := &GossipRelayNode{
 		l:         l,
 		bootstrap: bootstrap,
-		ds:        ds,
 		priv:      priv,
 		h:         h,
 		ps:        ps,

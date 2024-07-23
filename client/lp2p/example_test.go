@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	clock "github.com/jonboulle/clockwork"
+
 	gclient "github.com/drand/drand-cli/client/lp2p"
 	"github.com/drand/drand/v2/common"
 	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/log"
-	clock "github.com/jonboulle/clockwork"
 )
 
 const (
@@ -19,17 +20,6 @@ const (
 	relayP2PAddr2 = "/dnsaddr/api2.drand.sh"
 	relayP2PAddr3 = "/dnsaddr/api3.drand.sh"
 
-	jsonDefaultInfo = `{
-  "genesis_time": 1595431050,
-  "groupHash": "176f93498eac9ca337150b46d21dd58673ea4e3581185f869672e59fa4cb390a",
-  "hash": "8990e7a9aaed2ffed73dbd7092123d6f289930540d7651336225dc172e51b2ce",
-  "metadata": {
-    "beaconID": "default"
-  },
-  "period": 30,
-  "public_key": "868f005eb8e6e4ca0a47c8a77ceaa5309a47978a7c71bc5cce96366b5d7a569937c529eeda66c7293784a9402801af31",
-  "schemeID": "pedersen-bls-chained"
-}`
 	// jsonQuicknetInfo, can be hardcoded since these don't change over time
 	jsonQuicknetInfo = `{
   "genesis_time": 1692803367,

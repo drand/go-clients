@@ -30,6 +30,8 @@ issues:
       linters:
         - forbidigo # we use Println in our UX
         - goconst # we re-use some strings in our flags
+    - path: client/http
+      text: "unexported-return"
 run:
   skip-dirs:
     - demo

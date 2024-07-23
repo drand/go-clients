@@ -13,7 +13,6 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/google/uuid"
-	bds "github.com/ipfs/go-ds-badger2"
 	clock "github.com/jonboulle/clockwork"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	ma "github.com/multiformats/go-multiaddr"
@@ -330,10 +329,6 @@ func buildGossipClient(c *cli.Context, l log.Logger) ([]pubClient.Option, error)
 
 func buildClientHost(l log.Logger, clientListenAddr string, relayMultiaddr []ma.Multiaddr) (*pubsub.PubSub, error) {
 	clientID := uuid.New().String()
-	ds, err := bds.NewDatastore(path.Join(os.TempDir(), "drand-"+clientID+"-datastore"), nil)
-	if err != nil {
-		return nil, err
-	}
 	priv, err := lp2p.LoadOrCreatePrivKey(path.Join(os.TempDir(), "drand-"+clientID+"-id"), l)
 	if err != nil {
 		return nil, err
@@ -353,13 +348,7 @@ func buildClientHost(l log.Logger, clientListenAddr string, relayMultiaddr []ma.
 		listen = fmt.Sprintf("/ip4/%s/tcp/%s", bindHost, clientListenAddr)
 	}
 
-	_, ps, err := lp2p.ConstructHost(
-		ds,
-		priv,
-		listen,
-		relayMultiaddr,
-		l,
-	)
+	_, ps, err := lp2p.ConstructHost(priv, listen, relayMultiaddr, l)
 	if err != nil {
 		return nil, err
 	}

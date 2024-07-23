@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/sdk/freeport"
-	bds "github.com/ipfs/go-ds-badger2"
 	clock "github.com/jonboulle/clockwork"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -180,24 +179,14 @@ func TestHTTPClientTestFunc(t *testing.T) {
 }
 
 func newTestClient(t *testing.T, relayMultiaddr []ma.Multiaddr, info *chain2.Info, clk clock.Clock) (*Client, error) {
-	dataDir := t.TempDir()
 	identityDir := t.TempDir()
-	ds, err := bds.NewDatastore(dataDir, nil)
-	if err != nil {
-		return nil, err
-	}
+
 	lg := log.New(nil, log.DebugLevel, true)
 	priv, err := lp2p.LoadOrCreatePrivKey(path.Join(identityDir, "identity.key"), lg)
 	if err != nil {
 		return nil, err
 	}
-	h, ps, err := lp2p.ConstructHost(
-		ds,
-		priv,
-		"/ip4/0.0.0.0/tcp/"+strconv.Itoa(freeport.GetOne(t)),
-		relayMultiaddr,
-		lg,
-	)
+	h, ps, err := lp2p.ConstructHost(priv, "/ip4/0.0.0.0/tcp/"+strconv.Itoa(freeport.GetOne(t)), relayMultiaddr, lg)
 	if err != nil {
 		return nil, err
 	}

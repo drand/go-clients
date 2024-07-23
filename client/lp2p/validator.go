@@ -23,7 +23,7 @@ func randomnessValidator(info *chain2.Info, cache client.Cache, c *Client, clk c
 	if info != nil {
 		scheme, _ = crypto.GetSchemeByID(info.Scheme)
 	}
-	return func(ctx context.Context, p peer.ID, m *pubsub.Message) pubsub.ValidationResult {
+	return func(_ context.Context, p peer.ID, m *pubsub.Message) pubsub.ValidationResult {
 		rand := &drand.PublicRandResponse{}
 		err := proto.Unmarshal(m.Data, rand)
 		if err != nil {
@@ -31,7 +31,7 @@ func randomnessValidator(info *chain2.Info, cache client.Cache, c *Client, clk c
 			return pubsub.ValidationReject
 		}
 
-		c.log.Debugw("", "gossip validator", "Received new round", "round", rand.GetRound())
+		c.log.Debugw("", "gossip validator", "Received new round", "round", rand.GetRound(), "fromPeerID", p.String())
 
 		if info == nil {
 			c.log.Warnw("", "gossip validator", "Not validating received randomness due to lack of trust root.")

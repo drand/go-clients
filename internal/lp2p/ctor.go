@@ -10,15 +10,13 @@ import (
 	"path"
 	"time"
 
-	"github.com/ipfs/go-datastore"
-	"github.com/ipfs/go-datastore/namespace"
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/p2p/host/peerstore/pstoreds"
+	"github.com/libp2p/go-libp2p/p2p/host/peerstore/pstoremem"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
@@ -48,12 +46,10 @@ func PubSubTopic(h string) string {
 }
 
 // ConstructHost build a libp2p host configured for relaying drand randomness over pubsub.
-func ConstructHost(ds datastore.Datastore, priv crypto.PrivKey, listenAddr string,
-	bootstrap []ma.Multiaddr, log dlog.Logger) (host.Host, *pubsub.PubSub, error) {
+func ConstructHost(priv crypto.PrivKey, listenAddr string, bootstrap []ma.Multiaddr, log dlog.Logger) (host.Host, *pubsub.PubSub, error) {
 	ctx := context.Background()
 
-	pstoreDs := namespace.Wrap(ds, datastore.NewKey("/peerstore"))
-	pstore, err := pstoreds.NewPeerstore(ctx, pstoreDs, pstoreds.DefaultOpts())
+	pstore, err := pstoremem.NewPeerstore()
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating peerstore: %w", err)
 	}
@@ -82,7 +78,7 @@ func ConstructHost(ds datastore.Datastore, priv crypto.PrivKey, listenAddr strin
 			libp2p.Security(libp2ptls.ID, libp2ptls.New),
 			libp2p.Security(noise.ID, noise.New)),
 		libp2p.DisableRelay(),
-		// libp2p.Peerstore(pstore), depends on https://github.com/libp2p/go-libp2p-peerstore/issues/153
+		libp2p.Peerstore(pstore),
 		libp2p.UserAgent(userAgent),
 		libp2p.ConnectionManager(cmgr),
 	}

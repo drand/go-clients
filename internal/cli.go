@@ -126,8 +126,7 @@ func getPublicRandomness(cctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	json.NewEncoder(cctx.App.Writer).Encode(round)
-	return nil
+	return json.NewEncoder(cctx.App.Writer).Encode(round)
 }
 
 func getChainInfo(cctx *cli.Context) error {
