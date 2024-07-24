@@ -83,6 +83,7 @@ var runCmd = &cli.Command{
 		storeFlag,
 		listenFlag,
 		metricsFlag,
+		lib.GRPCConnectFlag,
 	}...),
 	Action: func(cctx *cli.Context) error {
 		if cctx.IsSet(lib.HashFlag.Name) || cctx.IsSet(lib.GroupConfFlag.Name) {
