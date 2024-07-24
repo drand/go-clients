@@ -1,4 +1,4 @@
-## drand-cli is a set of useful binaries for the drand ecosystem
+## go-clients is a Go client library and a set of useful binaries for the drand ecosystem
 
 This repo contains most notably:
  - Go code for interfacing with the drand networks through both HTTP and Gossipsub
