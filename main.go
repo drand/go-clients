@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	drand "github.com/drand/drand-cli/internal"
+	drand "github.com/drand/go-clients/internal"
 )
 
 func main() {

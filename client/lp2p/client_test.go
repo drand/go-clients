@@ -16,13 +16,13 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/require"
 
-	dhttp "github.com/drand/drand-cli/client/http"
-	httpmock "github.com/drand/drand-cli/client/test/http/mock"
-	"github.com/drand/drand-cli/internal/lp2p"
 	chain2 "github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
+	dhttp "github.com/drand/go-clients/client/http"
+	httpmock "github.com/drand/go-clients/client/test/http/mock"
+	"github.com/drand/go-clients/internal/lp2p"
 )
 
 //

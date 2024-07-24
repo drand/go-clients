@@ -1,4 +1,4 @@
-module github.com/drand/drand-cli
+module github.com/drand/go-clients
 
 go 1.22
 

@@ -11,13 +11,13 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 
-	localClient "github.com/drand/drand-cli/client"
 	"github.com/drand/drand/v2/common"
 	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/client"
 	dhttp "github.com/drand/drand/v2/handler/http"
 	"github.com/drand/drand/v2/protobuf/drand"
 	"github.com/drand/drand/v2/test/mock"
+	localClient "github.com/drand/go-clients/client"
 
 	"github.com/drand/drand/v2/crypto"
 )

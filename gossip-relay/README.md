@@ -61,7 +61,7 @@ Publish topic=/drand/pubsub/v0.0.0/<chain-hash> data={randomness}
 
 ```sh
 # Clone this repo
-git clone https://github.com/drand/drand-cli.git
+git clone https://github.com/drand/go-clients.git
 cd drand
 # Build the executable
 make relay-gossip-relay
@@ -175,8 +175,8 @@ import (
 
 	clock "github.com/jonboulle/clockwork"
 
-	"github.com/drand/drand-cli/client"
-	p2pClient "github.com/drand/drand-cli/client/lp2p"
+	"github.com/drand/go-clients/client"
+	p2pClient "github.com/drand/go-clients/client/lp2p"
 	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/log"
 )
@@ -232,9 +232,9 @@ import (
 
   clock "github.com/jonboulle/clockwork"
 
-  "github.com/drand/drand-cli/client"
-  "github.com/drand/drand-cli/client/http"
-  gclient "github.com/drand/drand-cli/client/lp2p"
+  "github.com/drand/go-clients/client"
+  "github.com/drand/go-clients/client/http"
+  gclient "github.com/drand/go-clients/client/lp2p"
   "github.com/drand/drand/v2/common/log"
 )
 

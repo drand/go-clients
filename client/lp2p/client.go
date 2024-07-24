@@ -15,12 +15,12 @@ import (
 	dnsaddr "github.com/multiformats/go-multiaddr-dns"
 	"google.golang.org/protobuf/proto"
 
-	client2 "github.com/drand/drand-cli/client"
 	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
 	"github.com/drand/drand/v2/protobuf/drand"
+	client2 "github.com/drand/go-clients/client"
 )
 
 // Client is a concrete pubsub client implementation

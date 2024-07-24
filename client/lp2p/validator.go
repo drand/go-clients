@@ -5,8 +5,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/drand/drand-cli/client"
 	commonutils "github.com/drand/drand/v2/common"
+	"github.com/drand/go-clients/client"
 
 	clock "github.com/jonboulle/clockwork"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"

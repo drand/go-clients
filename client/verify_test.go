@@ -7,12 +7,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	client2 "github.com/drand/drand-cli/client"
-	clientMock "github.com/drand/drand-cli/client/mock"
-	"github.com/drand/drand-cli/client/test/result/mock"
 	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
+	client2 "github.com/drand/go-clients/client"
+	clientMock "github.com/drand/go-clients/client/mock"
+	"github.com/drand/go-clients/client/test/result/mock"
 )
 
 func mockClientWithVerifiableResults(ctx context.Context, t *testing.T, l log.Logger, n int, strictRounds bool) (client.Client, []mock.Result) {

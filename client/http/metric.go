@@ -6,8 +6,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/drand/drand-cli/internal/metrics"
 	"github.com/drand/drand/v2/common"
+	"github.com/drand/go-clients/internal/metrics"
 
 	chain2 "github.com/drand/drand/v2/common/client"
 )

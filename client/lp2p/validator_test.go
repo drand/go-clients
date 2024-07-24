@@ -20,11 +20,11 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/drand/drand-cli/client"
-	"github.com/drand/drand-cli/client/test/cache"
 	chain2 "github.com/drand/drand/v2/common/chain"
 	dcrypto "github.com/drand/drand/v2/crypto"
 	"github.com/drand/drand/v2/protobuf/drand"
+	"github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client/test/cache"
 )
 
 type randomDataWrapper struct {
