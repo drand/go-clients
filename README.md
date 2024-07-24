@@ -1,11 +1,9 @@
 ## drand-cli is a set of useful binaries for the drand ecosystem
 
 This repo contains most notably:
- - a client CLI tool to fetch and verify drand beacons from the various available sources
+ - Go code for interfacing with the drand networks through both HTTP and Gossipsub
+ - a client CLI tool to fetch and verify drand beacons from the various available sources in your terminal
  - a gossipsub relay to relay drand beacons on gossipsub
- - Go APIs to connect to drand networks through http or gossipsub relays. 
-
-
 
 ---
 
