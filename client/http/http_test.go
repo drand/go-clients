@@ -13,9 +13,9 @@ import (
 
 	"github.com/drand/drand/v2/common/log"
 
-	"github.com/drand/drand-cli/client"
-	"github.com/drand/drand-cli/client/test/http/mock"
 	"github.com/drand/drand/v2/crypto"
+	"github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client/test/http/mock"
 )
 
 func TestHTTPClient(t *testing.T) {

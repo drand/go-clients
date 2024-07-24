@@ -9,9 +9,9 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/urfave/cli/v2"
 
-	"github.com/drand/drand-cli/internal/lib"
-	"github.com/drand/drand-cli/internal/lp2p"
 	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/go-clients/internal/lib"
+	"github.com/drand/go-clients/internal/lp2p"
 )
 
 // Automatically set through -ldflags

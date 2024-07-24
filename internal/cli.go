@@ -11,8 +11,8 @@ import (
 
 	client "github.com/drand/drand/v2/common/client"
 
-	"github.com/drand/drand-cli/internal/lib"
 	"github.com/drand/drand/v2/common"
+	"github.com/drand/go-clients/internal/lib"
 )
 
 // Automatically set through -ldflags

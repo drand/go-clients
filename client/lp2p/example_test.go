@@ -8,10 +8,10 @@ import (
 
 	clock "github.com/jonboulle/clockwork"
 
-	gclient "github.com/drand/drand-cli/client/lp2p"
 	"github.com/drand/drand/v2/common"
 	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/log"
+	gclient "github.com/drand/go-clients/client/lp2p"
 )
 
 const (

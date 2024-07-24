@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/drand/drand-cli/client/test/result/mock"
 	commonutils "github.com/drand/drand/v2/common"
 	chain2 "github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/go-clients/client/test/result/mock"
 )
 
 var _ client.Client = &Client{}

@@ -14,11 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 
-	"github.com/drand/drand-cli/client"
-	httpmock "github.com/drand/drand-cli/client/test/http/mock"
 	commonutils "github.com/drand/drand/v2/common"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
+	"github.com/drand/go-clients/client"
+	httpmock "github.com/drand/go-clients/client/test/http/mock"
 )
 
 var (

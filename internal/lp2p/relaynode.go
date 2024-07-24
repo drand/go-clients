@@ -11,10 +11,10 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"google.golang.org/protobuf/proto"
 
-	client2 "github.com/drand/drand-cli/client"
 	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/protobuf/drand"
+	client2 "github.com/drand/go-clients/client"
 )
 
 // GossipRelayConfig configures a gossip-relay relay node.

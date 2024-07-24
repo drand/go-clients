@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	client2 "github.com/drand/drand-cli/client"
 	"github.com/drand/drand/v2/crypto"
+	client2 "github.com/drand/go-clients/client"
 
 	json "github.com/nikkolasg/hexjson"
 

@@ -14,12 +14,12 @@ import (
 
 	"github.com/drand/drand/v2/crypto"
 
-	localClient "github.com/drand/drand-cli/client"
 	commonutils "github.com/drand/drand/v2/common"
 	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/protobuf/drand"
+	localClient "github.com/drand/go-clients/client"
 )
 
 const grpcDefaultTimeout = 5 * time.Second

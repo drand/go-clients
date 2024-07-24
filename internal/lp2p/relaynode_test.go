@@ -15,10 +15,10 @@ import (
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
 
-	"github.com/drand/drand-cli/client"
-	"github.com/drand/drand-cli/client/test/result/mock"
 	"github.com/drand/drand/v2/common/chain"
 	client2 "github.com/drand/drand/v2/common/client"
+	"github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client/test/result/mock"
 )
 
 type mockClient struct {

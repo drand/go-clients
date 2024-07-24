@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	client2 "github.com/drand/drand-cli/client"
-	"github.com/drand/drand-cli/client/http"
 	"github.com/drand/drand/v2/crypto"
+	client2 "github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client/http"
 )
 
 func Example_http_New() {

@@ -20,15 +20,15 @@ import (
 
 	"github.com/drand/drand/v2/common/key"
 
-	pubClient "github.com/drand/drand-cli/client"
-	http2 "github.com/drand/drand-cli/client/http"
-	gclient "github.com/drand/drand-cli/client/lp2p"
-	"github.com/drand/drand-cli/internal/grpc"
-	"github.com/drand/drand-cli/internal/lp2p"
 	commonutils "github.com/drand/drand/v2/common"
 	chainCommon "github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
+	pubClient "github.com/drand/go-clients/client"
+	http2 "github.com/drand/go-clients/client/http"
+	gclient "github.com/drand/go-clients/client/lp2p"
+	"github.com/drand/go-clients/internal/grpc"
+	"github.com/drand/go-clients/internal/lp2p"
 )
 
 var (
