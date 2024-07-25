@@ -307,7 +307,7 @@ func (h *httpClient) Get(ctx context.Context, round uint64) (client.Result, erro
 
 		randResponse, err := h.client.Do(req)
 		if err != nil || randResponse.StatusCode != nhttp.StatusOK {
-			resC <- httpGetResponse{nil, fmt.Errorf("doing request %v: %w", req, err)}
+			resC <- httpGetResponse{nil, fmt.Errorf("doing request (%v); err: %w; resp:%v", req.URL, err, randResponse)}
 			return
 		}
 		defer randResponse.Body.Close()
