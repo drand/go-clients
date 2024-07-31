@@ -27,22 +27,6 @@ import (
 	"github.com/drand/go-clients/client/test/cache"
 )
 
-type randomDataWrapper struct {
-	data client.RandomData
-}
-
-func (r *randomDataWrapper) GetRound() uint64 {
-	return r.data.Rnd
-}
-
-func (r *randomDataWrapper) GetSignature() []byte {
-	return r.data.Sig
-}
-
-func (r *randomDataWrapper) GetRandomness() []byte {
-	return r.data.Random
-}
-
 func randomPeerID(t *testing.T) peer.ID {
 	priv, _, err := crypto.GenerateEd25519Key(rand.Reader)
 	if err != nil {
@@ -228,14 +212,14 @@ func TestIgnoresCachedEqualNonRandomDataBeacon(t *testing.T) {
 	c := Client{log: log.New(nil, log.DebugLevel, true)}
 	clk := clock.NewFakeClockAt(time.Now())
 	validate := randomnessValidator(info, ca, &c, clk)
-	rdata := randomDataWrapper{fakeRandomData(info, clk)}
+	rdata := fakeRandomData(info, clk)
 
 	ca.Add(rdata.GetRound(), &rdata)
 
 	resp := drand.PublicRandResponse{
 		Round:             rdata.GetRound(),
 		Signature:         rdata.GetSignature(),
-		PreviousSignature: rdata.data.PreviousSignature,
+		PreviousSignature: rdata.GetPreviousSignature(),
 		Randomness:        rdata.GetRandomness(),
 	}
 	data, err := proto.Marshal(&resp)
@@ -256,7 +240,7 @@ func TestRejectsCachedEqualNonRandomDataBeacon(t *testing.T) {
 	c := Client{log: log.New(nil, log.DebugLevel, true)}
 	clk := clock.NewFakeClock()
 	validate := randomnessValidator(info, ca, &c, clk)
-	rdata := randomDataWrapper{fakeRandomData(info, clk)}
+	rdata := fakeRandomData(info, clk)
 
 	ca.Add(rdata.GetRound(), &rdata)
 
@@ -266,7 +250,7 @@ func TestRejectsCachedEqualNonRandomDataBeacon(t *testing.T) {
 	resp := drand.PublicRandResponse{
 		Round:             rdata.GetRound(),
 		Signature:         sig, // incoming message has incorrect sig
-		PreviousSignature: rdata.data.PreviousSignature,
+		PreviousSignature: rdata.GetPreviousSignature(),
 		Randomness:        rdata.GetRandomness(),
 	}
 	data, err := proto.Marshal(&resp)

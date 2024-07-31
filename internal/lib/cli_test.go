@@ -155,5 +155,5 @@ func groupTOMLPath() string {
 	if !ok {
 		return ""
 	}
-	return filepath.Join(filepath.Dir(file), "..", "..", "internal", "test", "default.toml")
+	return filepath.Join(filepath.Dir(file), "..", "..", "internal", "testdata", "default.toml")
 }

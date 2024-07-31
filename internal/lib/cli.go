@@ -18,13 +18,14 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/urfave/cli/v2"
 
+	"github.com/drand/go-clients/drand"
+
 	"github.com/drand/drand/v2/common/key"
 
 	commonutils "github.com/drand/drand/v2/common"
 	chainCommon "github.com/drand/drand/v2/common/chain"
-	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
-	pubClient "github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client"
 	http2 "github.com/drand/go-clients/client/http"
 	gclient "github.com/drand/go-clients/client/lp2p"
 	"github.com/drand/go-clients/internal/grpc"
@@ -116,9 +117,9 @@ var ClientFlags = []cli.Flag{
 // with ClientFlags
 //
 //nolint:gocyclo
-func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) (client.Client, error) {
+func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (drand.Client, error) {
 	ctx := c.Context
-	clients := make([]client.Client, 0)
+	clients := make([]drand.Client, 0)
 	var level int
 	if c.Bool(VerboseFlag.Name) {
 		level = log.DebugLevel
@@ -142,7 +143,7 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 		}
 		l.Debugw("parsing group-conf file, successful")
 
-		opts = append(opts, pubClient.WithChainInfo(info))
+		opts = append(opts, client.WithChainInfo(info))
 	}
 
 	if info != nil {
@@ -172,11 +173,11 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 				hex.EncodeToString(info.Hash()),
 			)
 		}
-		opts = append(opts, pubClient.WithChainHash(hash))
+		opts = append(opts, client.WithChainHash(hash))
 	}
 
 	if c.Bool(InsecureFlag.Name) {
-		opts = append(opts, pubClient.Insecurely())
+		opts = append(opts, client.Insecurely())
 	}
 
 	gc, info, err := buildHTTPClients(c, l, hash, withInstrumentation)
@@ -204,10 +205,10 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...pubClient.Option) 
 	}
 	opts = append(opts, gopt...)
 
-	return pubClient.Wrap(ctx, l, clients, opts...)
+	return client.Wrap(ctx, l, clients, opts...)
 }
 
-func buildGrpcClient(c *cli.Context, info *chainCommon.Info) ([]client.Client, *chainCommon.Info, error) {
+func buildGrpcClient(c *cli.Context, info *chainCommon.Info) ([]drand.Client, *chainCommon.Info, error) {
 	if !c.IsSet(GRPCConnectFlag.Name) {
 		return nil, info, nil
 	}
@@ -238,15 +239,15 @@ func buildGrpcClient(c *cli.Context, info *chainCommon.Info) ([]client.Client, *
 		}
 	}
 
-	return []client.Client{gc}, info, nil
+	return []drand.Client{gc}, info, nil
 }
 
-func buildHTTPClients(c *cli.Context, l log.Logger, hash []byte, withInstrumentation bool) ([]client.Client, *chainCommon.Info, error) {
+func buildHTTPClients(c *cli.Context, l log.Logger, hash []byte, withInstrumentation bool) ([]drand.Client, *chainCommon.Info, error) {
 	ctx := c.Context
-	clients := make([]client.Client, 0)
+	clients := make([]drand.Client, 0)
 	var err error
 	var skipped []string
-	var hc client.Client
+	var hc drand.Client
 	var info *chainCommon.Info
 
 	urls := c.StringSlice(URLFlag.Name)
@@ -305,7 +306,7 @@ func buildHTTPClients(c *cli.Context, l log.Logger, hash []byte, withInstrumenta
 	return clients, info, nil
 }
 
-func buildGossipClient(c *cli.Context, l log.Logger) ([]pubClient.Option, error) {
+func buildGossipClient(c *cli.Context, l log.Logger) ([]client.Option, error) {
 	if c.IsSet(RelayFlag.Name) {
 		addrs := c.StringSlice(RelayFlag.Name)
 		if len(addrs) > 0 {
@@ -321,10 +322,10 @@ func buildGossipClient(c *cli.Context, l log.Logger) ([]pubClient.Option, error)
 			if err != nil {
 				return nil, err
 			}
-			return []pubClient.Option{gclient.WithPubsub(l, ps, clock.NewRealClock(), gclient.DefaultBufferSize)}, nil
+			return []client.Option{gclient.WithPubsub(l, ps, clock.NewRealClock(), gclient.DefaultBufferSize)}, nil
 		}
 	}
-	return []pubClient.Option{}, nil
+	return []client.Option{}, nil
 }
 
 func buildClientHost(l log.Logger, clientListenAddr string, relayMultiaddr []ma.Multiaddr) (*pubsub.PubSub, error) {

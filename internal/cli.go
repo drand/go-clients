@@ -9,7 +9,7 @@ import (
 	json "github.com/nikkolasg/hexjson"
 	"github.com/urfave/cli/v2"
 
-	client "github.com/drand/drand/v2/common/client"
+	"github.com/drand/go-clients/drand"
 
 	"github.com/drand/drand/v2/common"
 	"github.com/drand/go-clients/internal/lib"
@@ -91,7 +91,7 @@ func toArray(flags ...cli.Flag) []cli.Flag {
 	return flags
 }
 
-func instantiateClient(cctx *cli.Context) (client.Client, error) {
+func instantiateClient(cctx *cli.Context) (drand.Client, error) {
 	c, err := lib.Create(cctx, false)
 	if err != nil {
 		return nil, fmt.Errorf("constructing client: %w", err)

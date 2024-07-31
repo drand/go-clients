@@ -3,36 +3,6 @@ Package client provides transport-agnostic logic to retrieve and verify
 randomness from drand, including retry, validation, caching and
 optimization features.
 
-Example:
-
-	package main
-
-	import (
-		"context"
-		"encoding/hex"
-		"fmt"
-
-		"github.com/drand/drand/v2/client"
-		"github.com/drand/drand/v2/common/log"
-	)
-
-	var chainHash, _ = hex.DecodeString("8990e7a9aaed2ffed73dbd7092123d6f289930540d7651336225dc172e51b2ce")
-
-	func main() {
-		ctx := context.Background()
-		lg := log.New(nil, log.DebugLevel, true)
-
-		c, err := client.New(ctx, lg,
-			client.From("..."), // see concrete client implementations
-			client.WithChainHash(chainHash),
-		)
-
-		// e.g. use the client to get the latest randomness round:
-		r, err := c.Get(ctx, 0)
-
-		fmt.Println(r.Round(), r.Randomness())
-	}
-
 The "From" option allows you to specify clients that work over particular
 transports. HTTP, gRPC and libp2p PubSub clients are provided as
 subpackages https://pkg.go.dev/github.com/drand/go-clients/internal/client/http,

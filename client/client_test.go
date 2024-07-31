@@ -6,34 +6,34 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drand/drand/v2/common/key"
-	"github.com/drand/drand/v2/common/log"
-
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 
-	"github.com/drand/drand/v2/common/chain"
-	"github.com/drand/drand/v2/common/client"
-	"github.com/drand/drand/v2/crypto"
-	client2 "github.com/drand/go-clients/client"
-	"github.com/drand/go-clients/client/http"
+	"github.com/drand/drand/v2/common/key"
+	"github.com/drand/drand/v2/common/log"
 	clientMock "github.com/drand/go-clients/client/mock"
-	httpmock "github.com/drand/go-clients/client/test/http/mock"
 	"github.com/drand/go-clients/client/test/result/mock"
+	"github.com/drand/go-clients/drand"
+
+	"github.com/drand/drand/v2/common/chain"
+	"github.com/drand/drand/v2/crypto"
+	"github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client/http"
+	httpmock "github.com/drand/go-clients/client/test/http/mock"
 )
 
 func TestClientConstraints(t *testing.T) {
 	ctx := context.Background()
 	lg := log.New(nil, log.DebugLevel, true)
-	if _, e := client2.New(ctx, lg); e == nil {
+	if _, e := client.New(ctx, lg); e == nil {
 		t.Fatal("client can't be created without root of trust")
 	}
 
-	if _, e := client2.New(ctx, lg, client2.WithChainHash([]byte{0})); e == nil {
+	if _, e := client.New(ctx, lg, client.WithChainHash([]byte{0})); e == nil {
 		t.Fatal("Client needs URLs if only a chain hash is specified")
 	}
 
-	if _, e := client2.New(ctx, lg, client2.From(clientMock.ClientWithResults(0, 5))); e == nil {
+	if _, e := client.New(ctx, lg, client.From(clientMock.ClientWithResults(0, 5))); e == nil {
 		t.Fatal("Client needs root of trust unless insecure specified explicitly")
 	}
 
@@ -41,7 +41,7 @@ func TestClientConstraints(t *testing.T) {
 	// As we will run is insecurely, we will set chain info so client can fetch it
 	c.OptionalInfo = fakeChainInfo(t)
 
-	if _, e := client2.New(ctx, lg, client2.From(c), client2.Insecurely()); e != nil {
+	if _, e := client.New(ctx, lg, client.From(c), client.Insecurely()); e != nil {
 		t.Fatal(e)
 	}
 }
@@ -69,12 +69,10 @@ func TestClientMultiple(t *testing.T) {
 		return
 	}
 
-	var c client.Client
-	var e error
-	c, e = client2.New(ctx,
+	c, e := client.New(ctx,
 		lg,
-		client2.From(httpClients...),
-		client2.WithChainHash(chainInfo.Hash()))
+		client.From(httpClients...),
+		client.WithChainHash(chainInfo.Hash()))
 
 	if e != nil {
 		t.Fatal(e)
@@ -99,8 +97,8 @@ func TestClientWithChainInfo(t *testing.T) {
 	lg := log.New(nil, log.DebugLevel, true)
 	hc, err := http.NewWithInfo(lg, "http://nxdomain.local/", chainInfo, nil)
 	require.NoError(t, err)
-	c, err := client2.New(ctx, lg, client2.WithChainInfo(chainInfo),
-		client2.From(hc))
+	c, err := client.New(ctx, lg, client.WithChainInfo(chainInfo),
+		client.From(hc))
 	if err != nil {
 		t.Fatal("existing group creation shouldn't do additional validaiton.")
 	}
@@ -126,10 +124,8 @@ func TestClientCache(t *testing.T) {
 		return
 	}
 
-	var c client.Client
-	var e error
-	c, e = client2.New(ctx, lg, client2.From(httpClients...),
-		client2.WithChainHash(chainInfo.Hash()), client2.WithCacheSize(1))
+	c, e := client.New(ctx, lg, client.From(httpClients...),
+		client.WithChainHash(chainInfo.Hash()), client.WithCacheSize(1))
 
 	if e != nil {
 		t.Fatal(e)
@@ -166,26 +162,20 @@ func TestClientWithoutCache(t *testing.T) {
 		return
 	}
 
-	var c client.Client
-	var e error
-	c, e = client2.New(ctx,
+	c, err := client.New(ctx,
 		lg,
-		client2.From(httpClients...),
-		client2.WithChainHash(chainInfo.Hash()),
-		client2.WithCacheSize(0))
+		client.From(httpClients...),
+		client.WithChainHash(chainInfo.Hash()),
+		client.WithCacheSize(0))
 
-	if e != nil {
-		t.Fatal(e)
-	}
-	_, e = c.Get(ctx, 0)
-	if e != nil {
-		t.Fatal(e)
-	}
+	require.NoError(t, err)
+
+	_, err = c.Get(ctx, 0)
+	require.NoError(t, err)
 	cancel()
-	_, e = c.Get(ctx, 0)
-	if e == nil {
-		t.Fatal("cache should be disabled.")
-	}
+	_, err = c.Get(ctx, 0)
+	require.Error(t, err)
+
 	_ = c.Close()
 }
 
@@ -196,21 +186,21 @@ func TestClientWithWatcher(t *testing.T) {
 	require.NoError(t, err)
 	info, results := mock.VerifiableResults(2, sch)
 
-	ch := make(chan client.Result, len(results))
+	ch := make(chan drand.Result, len(results))
 	for i := range results {
 		ch <- &results[i]
 	}
 	close(ch)
 
-	watcherCtor := func(chainInfo *chain.Info, _ client2.Cache) (client2.Watcher, error) {
+	watcherCtor := func(chainInfo *chain.Info, _ client.Cache) (client.Watcher, error) {
 		return &clientMock.Client{WatchCh: ch}, nil
 	}
 
-	var c client.Client
-	c, err = client2.New(ctx,
+	var c drand.Client
+	c, err = client.New(ctx,
 		lg,
-		client2.WithChainInfo(info),
-		client2.WithWatcher(watcherCtor),
+		client.WithChainInfo(info),
+		client.WithWatcher(watcherCtor),
 	)
 	require.NoError(t, err)
 
@@ -230,15 +220,15 @@ func TestClientWithWatcherCtorError(t *testing.T) {
 	ctx := context.Background()
 	lg := log.New(nil, log.DebugLevel, true)
 	watcherErr := errors.New("boom")
-	watcherCtor := func(chainInfo *chain.Info, _ client2.Cache) (client2.Watcher, error) {
+	watcherCtor := func(chainInfo *chain.Info, _ client.Cache) (client.Watcher, error) {
 		return nil, watcherErr
 	}
 
 	// constructor should return error returned by watcherCtor
-	_, err := client2.New(ctx,
+	_, err := client.New(ctx,
 		lg,
-		client2.WithChainInfo(fakeChainInfo(t)),
-		client2.WithWatcher(watcherCtor),
+		client.WithChainInfo(fakeChainInfo(t)),
+		client.WithWatcher(watcherCtor),
 	)
 	if !errors.Is(err, watcherErr) {
 		t.Fatal(err)
@@ -249,12 +239,12 @@ func TestClientChainHashOverrideError(t *testing.T) {
 	ctx := context.Background()
 	lg := log.New(nil, log.DebugLevel, true)
 	chainInfo := fakeChainInfo(t)
-	_, err := client2.Wrap(
+	_, err := client.Wrap(
 		ctx,
 		lg,
-		[]client.Client{client2.EmptyClientWithInfo(chainInfo)},
-		client2.WithChainInfo(chainInfo),
-		client2.WithChainHash(fakeChainInfo(t).Hash()),
+		[]drand.Client{client.EmptyClientWithInfo(chainInfo)},
+		client.WithChainInfo(chainInfo),
+		client.WithChainHash(fakeChainInfo(t).Hash()),
 	)
 	if err == nil {
 		t.Fatal("expected error, received no error")
@@ -268,12 +258,12 @@ func TestClientChainInfoOverrideError(t *testing.T) {
 	ctx := context.Background()
 	lg := log.New(nil, log.DebugLevel, true)
 	chainInfo := fakeChainInfo(t)
-	_, err := client2.Wrap(
+	_, err := client.Wrap(
 		ctx,
 		lg,
-		[]client.Client{client2.EmptyClientWithInfo(chainInfo)},
-		client2.WithChainHash(chainInfo.Hash()),
-		client2.WithChainInfo(fakeChainInfo(t)),
+		[]drand.Client{client.EmptyClientWithInfo(chainInfo)},
+		client.WithChainHash(chainInfo.Hash()),
+		client.WithChainInfo(fakeChainInfo(t)),
 	)
 	if err == nil {
 		t.Fatal("expected error, received no error")
@@ -300,25 +290,25 @@ func TestClientAutoWatch(t *testing.T) {
 
 	r1, _ := httpClient[0].Get(ctx, 1)
 	r2, _ := httpClient[0].Get(ctx, 2)
-	results := []client.Result{r1, r2}
+	results := []drand.Result{r1, r2}
 
-	ch := make(chan client.Result, len(results))
+	ch := make(chan drand.Result, len(results))
 	for i := range results {
 		ch <- results[i]
 	}
 	close(ch)
 
-	watcherCtor := func(chainInfo *chain.Info, _ client2.Cache) (client2.Watcher, error) {
+	watcherCtor := func(chainInfo *chain.Info, _ client.Cache) (client.Watcher, error) {
 		return &clientMock.Client{WatchCh: ch}, nil
 	}
 
-	var c client.Client
-	c, err = client2.New(ctx,
+	var c drand.Client
+	c, err = client.New(ctx,
 		lg,
-		client2.From(clientMock.ClientWithInfo(chainInfo)),
-		client2.WithChainHash(chainInfo.Hash()),
-		client2.WithWatcher(watcherCtor),
-		client2.WithAutoWatch(),
+		client.From(clientMock.ClientWithInfo(chainInfo)),
+		client.WithChainHash(chainInfo.Hash()),
+		client.WithWatcher(watcherCtor),
+		client.WithAutoWatch(),
 	)
 
 	if err != nil {
@@ -342,14 +332,14 @@ func TestClientAutoWatchRetry(t *testing.T) {
 	require.NoError(t, err)
 
 	info, results := mock.VerifiableResults(5, sch)
-	resC := make(chan client.Result)
+	resC := make(chan drand.Result)
 	defer close(resC)
 
 	// done is closed after all resuls have been written to resC
 	done := make(chan struct{})
 
 	// Returns a channel that yields the verifiable results above
-	watchF := func(ctx context.Context) <-chan client.Result {
+	watchF := func(ctx context.Context) <-chan drand.Result {
 		go func() {
 			for i := 0; i < len(results); i++ {
 				select {
@@ -366,9 +356,9 @@ func TestClientAutoWatchRetry(t *testing.T) {
 
 	var failer clientMock.Client
 	failer = clientMock.Client{
-		WatchF: func(ctx context.Context) <-chan client.Result {
+		WatchF: func(ctx context.Context) <-chan drand.Result {
 			// First call returns a closed channel
-			ch := make(chan client.Result)
+			ch := make(chan drand.Result)
 			close(ch)
 			// Second call returns a channel that writes results
 			failer.WatchF = watchF
@@ -376,14 +366,14 @@ func TestClientAutoWatchRetry(t *testing.T) {
 		},
 	}
 
-	var c client.Client
-	c, err = client2.New(ctx,
+	var c drand.Client
+	c, err = client.New(ctx,
 		lg,
-		client2.From(&failer, clientMock.ClientWithInfo(info)),
-		client2.WithChainInfo(info),
-		client2.WithAutoWatch(),
-		client2.WithAutoWatchRetry(time.Second),
-		client2.WithCacheSize(len(results)),
+		client.From(&failer, clientMock.ClientWithInfo(info)),
+		client.WithChainInfo(info),
+		client.WithAutoWatch(),
+		client.WithAutoWatchRetry(time.Second),
+		client.WithCacheSize(len(results)),
 	)
 
 	if err != nil {
@@ -409,7 +399,7 @@ func TestClientAutoWatchRetry(t *testing.T) {
 }
 
 // compareResults asserts that two results are the same.
-func compareResults(t *testing.T, expected, actual client.Result) {
+func compareResults(t *testing.T, expected, actual drand.Result) {
 	t.Helper()
 
 	require.NotNil(t, expected)

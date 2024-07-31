@@ -7,15 +7,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/go-clients/drand"
+
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
-	client2 "github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client"
 	clientMock "github.com/drand/go-clients/client/mock"
 	"github.com/drand/go-clients/client/test/result/mock"
 )
 
-func mockClientWithVerifiableResults(ctx context.Context, t *testing.T, l log.Logger, n int, strictRounds bool) (client.Client, []mock.Result) {
+func mockClientWithVerifiableResults(ctx context.Context, t *testing.T, l log.Logger, n int, strictRounds bool) (drand.Client, []mock.Result) {
 	t.Helper()
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)
@@ -23,15 +24,15 @@ func mockClientWithVerifiableResults(ctx context.Context, t *testing.T, l log.Lo
 	info, results := mock.VerifiableResults(n, sch)
 	mc := clientMock.Client{Results: results, StrictRounds: strictRounds, OptionalInfo: info}
 
-	var c client.Client
+	var c drand.Client
 
-	c, err = client2.Wrap(
+	c, err = client.Wrap(
 		ctx,
 		l,
-		[]client.Client{clientMock.ClientWithInfo(info), &mc},
-		client2.WithChainInfo(info),
-		client2.WithVerifiedResult(&results[0]),
-		client2.WithFullChainVerification(),
+		[]drand.Client{clientMock.ClientWithInfo(info), &mc},
+		client.WithChainInfo(info),
+		client.WithVerifiedResult(&results[0]),
+		client.WithFullChainVerification(),
 	)
 	require.NoError(t, err)
 

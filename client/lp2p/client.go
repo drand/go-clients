@@ -16,18 +16,18 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/drand/drand/v2/common/chain"
-	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
 	"github.com/drand/drand/v2/protobuf/drand"
-	client2 "github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client"
+	drandi "github.com/drand/go-clients/drand"
 )
 
 // Client is a concrete pubsub client implementation
 type Client struct {
 	cancel     func()
 	latest     uint64
-	cache      client2.Cache
+	cache      client.Cache
 	bufferSize int
 	log        log.Logger
 
@@ -48,8 +48,8 @@ func (c *Client) SetLog(l log.Logger) {
 
 // WithPubsub provides an option for integrating pubsub notification
 // into a drand client.
-func WithPubsub(l log.Logger, ps *pubsub.PubSub, clk clock.Clock, bufferSize int) client2.Option {
-	return client2.WithWatcher(func(info *chain.Info, cache client2.Cache) (client2.Watcher, error) {
+func WithPubsub(l log.Logger, ps *pubsub.PubSub, clk clock.Clock, bufferSize int) client.Option {
+	return client.WithWatcher(func(info *chain.Info, cache client.Cache) (client.Watcher, error) {
 		c, err := NewWithPubsub(l, ps, info, cache, clk, bufferSize)
 		if err != nil {
 			return nil, err
@@ -67,7 +67,7 @@ func PubSubTopic(h string) string {
 // a default Logger,
 //
 //nolint:funlen,lll,gocyclo // This is a long line
-func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache client2.Cache, clk clock.Clock, bufferSize int) (*Client, error) {
+func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache client.Cache, clk clock.Clock, bufferSize int) (*Client, error) {
 	if info == nil {
 		return nil, fmt.Errorf("no chain supplied for joining")
 	}
@@ -197,9 +197,9 @@ func (c *Client) Sub(ch chan drand.PublicRandResponse) UnsubFunc {
 }
 
 // Watch implements the client.Watcher interface
-func (c *Client) Watch(ctx context.Context) <-chan client.Result {
+func (c *Client) Watch(ctx context.Context) <-chan drandi.Result {
 	innerCh := make(chan drand.PublicRandResponse, c.bufferSize)
-	outerCh := make(chan client.Result, c.bufferSize)
+	outerCh := make(chan drandi.Result, c.bufferSize)
 	end := c.Sub(innerCh)
 
 	w := sync.WaitGroup{}
@@ -217,7 +217,7 @@ func (c *Client) Watch(ctx context.Context) <-chan client.Result {
 				if !ok {
 					return
 				}
-				dat := &client2.RandomData{
+				dat := &client.RandomData{
 					Rnd:               resp.GetRound(),
 					Random:            crypto.RandomnessFromSignature(resp.GetSignature()),
 					Sig:               resp.GetSignature(),

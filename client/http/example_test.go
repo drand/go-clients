@@ -5,8 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
-	client2 "github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client"
 	"github.com/drand/go-clients/client/http"
 )
 
@@ -17,17 +18,17 @@ func Example_http_New() {
 		panic(err)
 	}
 
-	client, err := http.New(context.Background(), nil, "http://api.drand.sh", chainhash, nil)
+	c, err := http.New(context.Background(), nil, "http://api.drand.sh", chainhash, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	result, err := client.Get(context.Background(), 1234)
+	result, err := c.Get(context.Background(), 1234)
 	if err != nil {
 		panic(err)
 	}
 
-	info, err := client.Info(context.Background())
+	info, err := c.Info(context.Background())
 	if err != nil {
 		panic(err)
 	}
@@ -38,10 +39,7 @@ func Example_http_New() {
 	}
 
 	// make sure to verify the beacons when using the raw http client without a verifying client
-	err = scheme.VerifyBeacon(&client2.RandomData{
-		Rnd: result.GetRound(),
-		Sig: result.GetSignature(),
-	}, info.PublicKey)
+	err = scheme.VerifyBeacon(result, info.PublicKey)
 	if err != nil {
 		panic(err)
 	}
@@ -49,4 +47,32 @@ func Example_http_New() {
 	fmt.Printf("got beacon: round=%d; randomness=%x\n", result.GetRound(), result.GetRandomness())
 
 	//output: got beacon: round=1234; randomness=9ead58abb451d8f521338c43ba5595610642a0c07d0e9babeaae6a98787629de
+}
+
+func Example_http_New_with_chainhash() {
+	var urls = []string{
+		"https://api.drand.sh",
+		"https://drand.cloudflare.com",
+	}
+
+	var chainHash, _ = hex.DecodeString("8990e7a9aaed2ffed73dbd7092123d6f289930540d7651336225dc172e51b2ce")
+
+	ctx := context.Background()
+	lg := log.New(nil, log.DebugLevel, true)
+
+	c, err := client.New(ctx, lg,
+		client.From(http.ForURLs(ctx, lg, urls, chainHash)...),
+		client.WithChainHash(chainHash),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	info, err := c.Info(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(info.GetSchemeName())
+	//output: pedersen-bls-chained
 }

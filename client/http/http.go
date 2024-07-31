@@ -12,17 +12,17 @@ import (
 	"time"
 
 	"github.com/drand/drand/v2/crypto"
-	client2 "github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/drand"
 
 	json "github.com/nikkolasg/hexjson"
 
 	"github.com/drand/drand/v2/common"
 	chain2 "github.com/drand/drand/v2/common/chain"
-	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 )
 
-var _ client.Client = &httpClient{}
+var _ drand.Client = &httpClient{}
 
 var errClientClosed = fmt.Errorf("client closed")
 
@@ -32,6 +32,14 @@ const defaultHTTTPTimeout = 60 * time.Second
 const httpWaitMaxCounter = 20
 const httpWaitInterval = 2 * time.Second
 const maxTimeoutHTTPRequest = 5 * time.Second
+
+func NewSimpleClient(host, chainhash string) (*httpClient, error) {
+	chb, err := hex.DecodeString(chainhash)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create basic HTTP client for url %q and chainhash %q: %w", host, chainhash, err)
+	}
+	return New(context.Background(), nil, host, chb, nil)
+}
 
 // New creates a new client pointing to an HTTP endpoint
 func New(ctx context.Context, l log.Logger, url string, chainHash []byte, transport nhttp.RoundTripper) (*httpClient, error) {
@@ -92,8 +100,8 @@ func NewWithInfo(l log.Logger, url string, info *chain2.Info, transport nhttp.Ro
 }
 
 // ForURLs provides a shortcut for creating a set of HTTP clients for a set of URLs.
-func ForURLs(ctx context.Context, l log.Logger, urls []string, chainHash []byte) []client.Client {
-	clients := make([]client.Client, 0)
+func ForURLs(ctx context.Context, l log.Logger, urls []string, chainHash []byte) []drand.Client {
+	clients := make([]drand.Client, 0)
 	var info *chain2.Info
 	var skipped []string
 	for _, u := range urls {
@@ -280,12 +288,12 @@ func (h *httpClient) FetchChainInfo(ctx context.Context, chainHash []byte) (*cha
 }
 
 type httpGetResponse struct {
-	result client.Result
+	result drand.Result
 	err    error
 }
 
 // Get returns the randomness at `round` or an error.
-func (h *httpClient) Get(ctx context.Context, round uint64) (client.Result, error) {
+func (h *httpClient) Get(ctx context.Context, round uint64) (drand.Result, error) {
 	var url string
 	if round == 0 {
 		url = fmt.Sprintf("%s%x/public/latest", h.root, h.chainInfo.Hash())
@@ -312,7 +320,7 @@ func (h *httpClient) Get(ctx context.Context, round uint64) (client.Result, erro
 		}
 		defer randResponse.Body.Close()
 
-		randResp := client2.RandomData{}
+		randResp := client.RandomData{}
 		if err := json.NewDecoder(randResponse.Body).Decode(&randResp); err != nil {
 			resC <- httpGetResponse{nil, fmt.Errorf("decoding response: %w", err)}
 			return
@@ -340,14 +348,14 @@ func (h *httpClient) Get(ctx context.Context, round uint64) (client.Result, erro
 }
 
 // Watch returns new randomness as it becomes available.
-func (h *httpClient) Watch(ctx context.Context) <-chan client.Result {
-	out := make(chan client.Result)
+func (h *httpClient) Watch(ctx context.Context) <-chan drand.Result {
+	out := make(chan drand.Result)
 	go func() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer close(out)
 
-		in := client2.PollingWatcher(ctx, h, h.chainInfo, h.l)
+		in := client.PollingWatcher(ctx, h, h.chainInfo, h.l)
 		for {
 			select {
 			case res, ok := <-in:

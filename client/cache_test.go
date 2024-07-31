@@ -5,10 +5,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 	clientMock "github.com/drand/go-clients/client/mock"
 	"github.com/drand/go-clients/client/test/result/mock"
+	"github.com/drand/go-clients/drand"
 )
 
 func TestCacheGet(t *testing.T) {
@@ -79,7 +79,7 @@ func TestCacheGetLatest(t *testing.T) {
 
 func TestCacheWatch(t *testing.T) {
 	m := clientMock.ClientWithResults(2, 6)
-	rc := make(chan client.Result, 1)
+	rc := make(chan drand.Result, 1)
 	m.WatchCh = rc
 	arcCache, err := makeCache(3)
 	if err != nil {
@@ -111,7 +111,7 @@ func TestCacheClose(t *testing.T) {
 	wg.Add(1)
 
 	c := &clientMock.Client{
-		WatchCh: make(chan client.Result),
+		WatchCh: make(chan drand.Result),
 		CloseF: func() error {
 			wg.Done()
 			return nil

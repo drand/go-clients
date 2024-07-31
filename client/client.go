@@ -9,8 +9,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/drand/go-clients/drand"
+
 	"github.com/drand/drand/v2/common/chain"
-	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
 )
@@ -18,7 +19,7 @@ import (
 const clientStartupTimeoutDefault = time.Second * 5
 
 // New creates a client with specified configuration.
-func New(ctx context.Context, l log.Logger, options ...Option) (client.Client, error) {
+func New(ctx context.Context, l log.Logger, options ...Option) (drand.Client, error) {
 	cfg := clientConfig{
 		cacheSize: 32,
 		log:       l,
@@ -34,18 +35,18 @@ func New(ctx context.Context, l log.Logger, options ...Option) (client.Client, e
 
 // Wrap provides a single entrypoint for wrapping a concrete client
 // implementation with configured aggregation, caching, and retry logic
-func Wrap(ctx context.Context, l log.Logger, clients []client.Client, options ...Option) (client.Client, error) {
+func Wrap(ctx context.Context, l log.Logger, clients []drand.Client, options ...Option) (drand.Client, error) {
 	return New(ctx, l, append(options, From(clients...))...)
 }
 
-func trySetLog(c client.Client, l log.Logger) {
-	if lc, ok := c.(client.LoggingClient); ok {
+func trySetLog(c drand.Client, l log.Logger) {
+	if lc, ok := c.(drand.LoggingClient); ok {
 		lc.SetLog(l)
 	}
 }
 
 // makeClient creates a client from a configuration.
-func makeClient(ctx context.Context, l log.Logger, cfg *clientConfig) (client.Client, error) {
+func makeClient(ctx context.Context, l log.Logger, cfg *clientConfig) (drand.Client, error) {
 	if !cfg.insecure && cfg.chainHash == nil && cfg.chainInfo == nil {
 		l.Errorw("no root of trust specified")
 		return nil, errors.New("no root of trust specified")
@@ -69,7 +70,7 @@ func makeClient(ctx context.Context, l log.Logger, cfg *clientConfig) (client.Cl
 	}
 
 	// provision watcher client
-	var wc client.Client
+	var wc drand.Client
 	if cfg.watcher != nil {
 		wc, err = makeWatcherClient(cfg, cache)
 		if err != nil {
@@ -82,9 +83,9 @@ func makeClient(ctx context.Context, l log.Logger, cfg *clientConfig) (client.Cl
 		trySetLog(c, cfg.log)
 	}
 
-	var c client.Client
+	var c drand.Client
 
-	verifiers := make([]client.Client, 0, len(cfg.clients))
+	verifiers := make([]drand.Client, 0, len(cfg.clients))
 	for _, source := range cfg.clients {
 		sch, err := crypto.GetSchemeByID(cfg.chainInfo.Scheme)
 		if err != nil {
@@ -113,7 +114,7 @@ func makeClient(ctx context.Context, l log.Logger, cfg *clientConfig) (client.Cl
 }
 
 //nolint:lll // This function has nicely named parameters, so it's long.
-func makeOptimizingClient(l log.Logger, cfg *clientConfig, verifiers []client.Client, watcher client.Client, cache Cache) (client.Client, error) {
+func makeOptimizingClient(l log.Logger, cfg *clientConfig, verifiers []drand.Client, watcher drand.Client, cache Cache) (drand.Client, error) {
 	oc, err := newOptimizingClient(l, verifiers, 0, 0, 0, 0)
 	if err != nil {
 		return nil, err
@@ -121,7 +122,7 @@ func makeOptimizingClient(l log.Logger, cfg *clientConfig, verifiers []client.Cl
 	if watcher != nil {
 		oc.MarkPassive(watcher)
 	}
-	c := client.Client(oc)
+	c := drand.Client(oc)
 	trySetLog(c, cfg.log)
 
 	if cfg.cacheSize > 0 {
@@ -140,7 +141,7 @@ func makeOptimizingClient(l log.Logger, cfg *clientConfig, verifiers []client.Cl
 	return c, nil
 }
 
-func makeWatcherClient(cfg *clientConfig, cache Cache) (client.Client, error) {
+func makeWatcherClient(cfg *clientConfig, cache Cache) (drand.Client, error) {
 	if cfg.chainInfo == nil {
 		return nil, fmt.Errorf("chain info cannot be nil")
 	}
@@ -155,7 +156,7 @@ func makeWatcherClient(cfg *clientConfig, cache Cache) (client.Client, error) {
 
 type clientConfig struct {
 	// clients is the set of options for fetching randomness
-	clients []client.Client
+	clients []drand.Client
 	// watcher is a constructor function for generating a new partial client of randomness
 	watcher WatcherCtor
 	// from `chainInfo.Hash()` - serves as a root of trust for a given
@@ -164,7 +165,7 @@ type clientConfig struct {
 	// Full chain information - serves as a root of trust.
 	chainInfo *chain.Info
 	// A previously fetched result serving as a verification checkpoint if one exists.
-	previousResult client.Result
+	previousResult drand.Result
 	// chain signature verification back to the 1st round, or to a know result to ensure
 	// determinism in the event of a compromised chain.
 	fullVerify bool
@@ -185,7 +186,7 @@ type clientConfig struct {
 	prometheus prometheus.Registerer
 }
 
-func (c *clientConfig) tryPopulateInfo(ctx context.Context, clients ...client.Client) (err error) {
+func (c *clientConfig) tryPopulateInfo(ctx context.Context, clients ...drand.Client) (err error) {
 	if c.chainInfo == nil {
 		ctx, cancel := context.WithTimeout(ctx, clientStartupTimeoutDefault)
 		defer cancel()
@@ -208,7 +209,7 @@ func (c *clientConfig) tryPopulateInfo(ctx context.Context, clients ...client.Cl
 type Option func(cfg *clientConfig) error
 
 // From constructs the client from a set of clients providing randomness
-func From(c ...client.Client) Option {
+func From(c ...drand.Client) Option {
 	return func(cfg *clientConfig) error {
 		cfg.clients = c
 		return nil
@@ -260,7 +261,7 @@ func WithChainInfo(chainInfo *chain.Info) Option {
 // WithVerifiedResult provides a checkpoint of randomness verified at a given round.
 // Used in combination with `VerifyFullChain`, this allows for catching up only on
 // previously not-yet-verified results.
-func WithVerifiedResult(result client.Result) Option {
+func WithVerifiedResult(result drand.Result) Option {
 	return func(cfg *clientConfig) error {
 		if cfg.previousResult != nil && cfg.previousResult.GetRound() > result.GetRound() {
 			return errors.New("refusing to override verified result with an earlier result")
@@ -285,7 +286,7 @@ func WithFullChainVerification() Option {
 
 // Watcher supplies the `Watch` portion of the drand client interface.
 type Watcher interface {
-	Watch(ctx context.Context) <-chan client.Result
+	Watch(ctx context.Context) <-chan drand.Result
 }
 
 // WatcherCtor creates a Watcher once chain info is known.
