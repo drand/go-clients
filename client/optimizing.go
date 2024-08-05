@@ -52,7 +52,7 @@ type optimizingClient struct {
 // newOptimizingClient creates a drand client that measures the speed of clients
 // and uses the fastest ones.
 //
-// drand.Clients passed to the optimizing client are ordered by speed and calls to
+// Clients passed to the optimizing client are ordered by speed and calls to
 // `Get` race the 2 fastest clients (by default) for the result. If a client
 // errors then it is moved to the back of the list.
 //
