@@ -26,10 +26,6 @@ issues:
     - path: internal/lib
       linters:
         - forbidigo # we use Println in our UX
-    - path: internal/drand-cli
-      linters:
-        - forbidigo # we use Println in our UX
-        - goconst # we re-use some strings in our flags
     - path: client/http
       text: "unexported-return"
 run:

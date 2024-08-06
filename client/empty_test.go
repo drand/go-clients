@@ -7,8 +7,7 @@ import (
 	"time"
 
 	commonutils "github.com/drand/drand/v2/common"
-
-	chain2 "github.com/drand/drand/v2/common/client"
+	"github.com/drand/go-clients/drand"
 )
 
 func TestEmptyClient(t *testing.T) {
@@ -55,7 +54,7 @@ func TestEmptyClient(t *testing.T) {
 
 	ch := c.Watch(ctx)
 	//nolint
-	var rs []chain2.Result
+	var rs []drand.Result
 	for r := range ch {
 		rs = append(rs, r)
 	}

@@ -130,7 +130,7 @@ func (g *grpcClient) RoundAt(t time.Time) uint64 {
 	if err != nil {
 		return 0
 	}
-	return commonutils.CurrentRound(t.Unix(), time.Second*time.Duration(info.Period), info.GenesisTime)
+	return commonutils.CurrentRound(t.Unix(), time.Second*time.Duration(info.GetPeriod()), info.GetGenesisTime())
 }
 
 // SetLog configures the client log output
