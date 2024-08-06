@@ -28,8 +28,7 @@ issues:
         - forbidigo # we use Println in our UX
     - path: client/http
       text: "unexported-return"
-run:
-  skip-dirs:
+  exclude-dirs:
     - demo
     - test
 
