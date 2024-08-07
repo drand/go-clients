@@ -13,7 +13,6 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/google/uuid"
-	clock "github.com/jonboulle/clockwork"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/urfave/cli/v2"
@@ -118,7 +117,6 @@ var ClientFlags = []cli.Flag{
 //
 //nolint:gocyclo
 func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (drand.Client, error) {
-	ctx := c.Context
 	clients := make([]drand.Client, 0)
 	var level int
 	if c.Bool(VerboseFlag.Name) {
@@ -205,7 +203,7 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	}
 	opts = append(opts, gopt...)
 
-	return client.Wrap(ctx, l, clients, opts...)
+	return client.Wrap(clients, opts...)
 }
 
 func buildGrpcClient(c *cli.Context, info *chainCommon.Info) ([]drand.Client, *chainCommon.Info, error) {
@@ -322,7 +320,7 @@ func buildGossipClient(c *cli.Context, l log.Logger) ([]client.Option, error) {
 			if err != nil {
 				return nil, err
 			}
-			return []client.Option{gclient.WithPubsub(l, ps, clock.NewRealClock(), gclient.DefaultBufferSize)}, nil
+			return []client.Option{gclient.WithPubsub(ps)}, nil
 		}
 	}
 	return []client.Option{}, nil

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sync"
 
-	clock "github.com/jonboulle/clockwork"
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -23,23 +22,24 @@ import (
 	drandi "github.com/drand/go-clients/drand"
 )
 
+var _ drandi.LoggingClient = &Client{}
+
+// WatchBufferSize controls how many incoming messages can be in-flight until they start
+// to be dropped by the library when using Client.Watch
+var WatchBufferSize = 100
+
 // Client is a concrete pubsub client implementation
 type Client struct {
-	cancel     func()
-	latest     uint64
-	cache      client.Cache
-	bufferSize int
-	log        log.Logger
+	cancel func()
+	latest uint64
+	cache  client.Cache
+	log    log.Logger
 
 	subs struct {
 		sync.Mutex
 		M map[*int]chan drand.PublicRandResponse
 	}
 }
-
-// DefaultBufferSize controls how many incoming messages can be in-flight until they start
-// to be dropped by the library
-const DefaultBufferSize = 100
 
 // SetLog configures the client log output
 func (c *Client) SetLog(l log.Logger) {
@@ -48,9 +48,9 @@ func (c *Client) SetLog(l log.Logger) {
 
 // WithPubsub provides an option for integrating pubsub notification
 // into a drand client.
-func WithPubsub(l log.Logger, ps *pubsub.PubSub, clk clock.Clock, bufferSize int) client.Option {
-	return client.WithWatcher(func(info *chain.Info, cache client.Cache) (client.Watcher, error) {
-		c, err := NewWithPubsub(l, ps, info, cache, clk, bufferSize)
+func WithPubsub(ps *pubsub.PubSub) client.Option {
+	return client.WithWatcher(func(l log.Logger, info *chain.Info, cache client.Cache) (client.Watcher, error) {
+		c, err := NewWithPubsub(l, ps, info, cache)
 		if err != nil {
 			return nil, err
 		}
@@ -67,7 +67,7 @@ func PubSubTopic(h string) string {
 // a default Logger,
 //
 //nolint:funlen,lll,gocyclo // This is a long line
-func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache client.Cache, clk clock.Clock, bufferSize int) (*Client, error) {
+func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache client.Cache) (*Client, error) {
 	if info == nil {
 		return nil, fmt.Errorf("no chain supplied for joining")
 	}
@@ -85,15 +85,14 @@ func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache clie
 
 	ctx, cancel := context.WithCancel(context.Background())
 	c := &Client{
-		cancel:     cancel,
-		cache:      cache,
-		bufferSize: bufferSize,
-		log:        l,
+		cancel: cancel,
+		cache:  cache,
+		log:    l,
 	}
 
 	chainHash := hex.EncodeToString(info.Hash())
 	topic := PubSubTopic(chainHash)
-	if err := ps.RegisterTopicValidator(topic, randomnessValidator(info, cache, c, clk)); err != nil {
+	if err := ps.RegisterTopicValidator(topic, randomnessValidator(info, cache, c)); err != nil {
 		cancel()
 		return nil, fmt.Errorf("creating topic: %w", err)
 	}
@@ -198,8 +197,8 @@ func (c *Client) Sub(ch chan drand.PublicRandResponse) UnsubFunc {
 
 // Watch implements the client.Watcher interface
 func (c *Client) Watch(ctx context.Context) <-chan drandi.Result {
-	innerCh := make(chan drand.PublicRandResponse, c.bufferSize)
-	outerCh := make(chan drandi.Result, c.bufferSize)
+	innerCh := make(chan drand.PublicRandResponse, WatchBufferSize)
+	outerCh := make(chan drandi.Result, WatchBufferSize)
 	end := c.Sub(innerCh)
 
 	w := sync.WaitGroup{}
@@ -212,9 +211,9 @@ func (c *Client) Watch(ctx context.Context) <-chan drandi.Result {
 
 		for {
 			select {
-			// TODO: do not copy by assignment any drand.PublicRandResponse
 			case resp, ok := <-innerCh: //nolint:govet
 				if !ok {
+					c.log.Debugw("innerCh closed")
 					return
 				}
 				dat := &client.RandomData{

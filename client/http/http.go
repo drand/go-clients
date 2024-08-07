@@ -23,6 +23,7 @@ import (
 )
 
 var _ drand.Client = &httpClient{}
+var _ drand.LoggingClient = &httpClient{}
 
 var errClientClosed = fmt.Errorf("client closed")
 
@@ -33,6 +34,8 @@ const httpWaitMaxCounter = 20
 const httpWaitInterval = 2 * time.Second
 const maxTimeoutHTTPRequest = 5 * time.Second
 
+// NewSimpleClient creates a client using the default logger, default transport and a background context
+// to instantiate a new Client for that remote host for that specific chainhash.
 func NewSimpleClient(host, chainhash string) (*httpClient, error) {
 	chb, err := hex.DecodeString(chainhash)
 	if err != nil {
@@ -76,6 +79,9 @@ func New(ctx context.Context, l log.Logger, url string, chainHash []byte, transp
 
 // NewWithInfo constructs an http client when the group parameters are already known.
 func NewWithInfo(l log.Logger, url string, info *chain2.Info, transport nhttp.RoundTripper) (*httpClient, error) {
+	if l == nil {
+		l = log.DefaultLogger()
+	}
 	if transport == nil {
 		transport = nhttp.DefaultTransport
 	}

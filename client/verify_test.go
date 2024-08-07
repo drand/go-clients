@@ -27,11 +27,9 @@ func mockClientWithVerifiableResults(ctx context.Context, t *testing.T, l log.Lo
 	var c drand.Client
 
 	c, err = client.Wrap(
-		ctx,
-		l,
 		[]drand.Client{clientMock.ClientWithInfo(info), &mc},
 		client.WithChainInfo(info),
-		client.WithVerifiedResult(&results[0]),
+		client.WithTrustedResult(&results[0]),
 		client.WithFullChainVerification(),
 	)
 	require.NoError(t, err)

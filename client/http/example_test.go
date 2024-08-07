@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
@@ -45,7 +46,6 @@ func Example_http_New() {
 	}
 
 	fmt.Printf("got beacon: round=%d; randomness=%x\n", result.GetRound(), result.GetRandomness())
-
 	//output: got beacon: round=1234; randomness=9ead58abb451d8f521338c43ba5595610642a0c07d0e9babeaae6a98787629de
 }
 
@@ -55,18 +55,19 @@ func Example_http_New_with_chainhash() {
 		"https://drand.cloudflare.com",
 	}
 
-	var chainHash, _ = hex.DecodeString("8990e7a9aaed2ffed73dbd7092123d6f289930540d7651336225dc172e51b2ce")
+	var chainHash, _ = hex.DecodeString("52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971")
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	lg := log.New(nil, log.DebugLevel, true)
 
-	c, err := client.New(ctx, lg,
-		client.From(http.ForURLs(ctx, lg, urls, chainHash)...),
+	c, err := client.New(client.From(http.ForURLs(ctx, lg, urls, chainHash)...),
 		client.WithChainHash(chainHash),
+		client.WithLogger(lg),
 	)
 	if err != nil {
 		panic(err)
 	}
+	cancel()
 
 	info, err := c.Info(context.Background())
 	if err != nil {
@@ -74,5 +75,5 @@ func Example_http_New_with_chainhash() {
 	}
 
 	fmt.Println(info.GetSchemeName())
-	//output: pedersen-bls-chained
+	//output: bls-unchained-g1-rfc9380
 }
