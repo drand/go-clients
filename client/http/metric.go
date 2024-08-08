@@ -6,14 +6,14 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/drand/go-clients/drand"
+
 	"github.com/drand/drand/v2/common"
 	"github.com/drand/go-clients/internal/metrics"
-
-	chain2 "github.com/drand/drand/v2/common/client"
 )
 
 // MeasureHeartbeats periodically tracks latency observed on a set of HTTP clients
-func MeasureHeartbeats(ctx context.Context, c []chain2.Client) *HealthMetrics {
+func MeasureHeartbeats(ctx context.Context, c []drand.Client) *HealthMetrics {
 	m := &HealthMetrics{
 		next:    0,
 		clients: c,
@@ -27,7 +27,7 @@ func MeasureHeartbeats(ctx context.Context, c []chain2.Client) *HealthMetrics {
 // HealthMetrics is a measurement task around HTTP clients
 type HealthMetrics struct {
 	next    int
-	clients []chain2.Client
+	clients []drand.Client
 }
 
 // HeartbeatInterval is the duration between liveness heartbeats sent to an HTTP API.

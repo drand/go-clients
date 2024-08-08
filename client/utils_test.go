@@ -8,8 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/drand/go-clients/drand"
+
 	"github.com/drand/drand/v2/common/chain"
-	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/key"
 	"github.com/drand/drand/v2/crypto"
 )
@@ -30,7 +31,7 @@ func fakeChainInfo(t *testing.T) *chain.Info {
 	}
 }
 
-func latestResult(t *testing.T, c client.Client) client.Result {
+func latestResult(t *testing.T, c drand.Client) drand.Result {
 	t.Helper()
 	r, err := c.Get(context.Background(), 0)
 	if err != nil {
@@ -40,7 +41,7 @@ func latestResult(t *testing.T, c client.Client) client.Result {
 }
 
 // nextResult reads the next result from the channel and fails the test if it closes before a value is read.
-func nextResult(t *testing.T, ch <-chan client.Result) client.Result {
+func nextResult(t *testing.T, ch <-chan drand.Result) drand.Result {
 	t.Helper()
 
 	select {
@@ -56,7 +57,7 @@ func nextResult(t *testing.T, ch <-chan client.Result) client.Result {
 }
 
 // compareResults asserts that two results are the same.
-func compareResults(t *testing.T, a, b client.Result) {
+func compareResults(t *testing.T, a, b drand.Result) {
 	t.Helper()
 
 	if a.GetRound() != b.GetRound() {

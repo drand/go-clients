@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/go-clients/drand"
 )
 
 const (
@@ -24,7 +24,7 @@ const (
 // is passed, a `watch` will be run on the watch client in the absence of external watchers,
 // which will swap watching over to the main client. If no watch client is set and autowatch is off
 // then a single watch will only run when an external watch is requested.
-func newWatchAggregator(l log.Logger, c, wc client.Client, autoWatch bool, autoWatchRetry time.Duration) *watchAggregator {
+func newWatchAggregator(l log.Logger, c, wc drand.Client, autoWatch bool, autoWatchRetry time.Duration) *watchAggregator {
 	if autoWatchRetry == 0 {
 		autoWatchRetry = defaultAutoWatchRetry
 	}
@@ -41,12 +41,12 @@ func newWatchAggregator(l log.Logger, c, wc client.Client, autoWatch bool, autoW
 
 type subscriber struct {
 	ctx context.Context
-	c   chan client.Result
+	c   chan drand.Result
 }
 
 type watchAggregator struct {
-	client.Client
-	passiveClient   client.Client
+	drand.Client
+	passiveClient   drand.Client
 	autoWatch       bool
 	autoWatchRetry  time.Duration
 	log             log.Logger
@@ -82,7 +82,7 @@ func (c *watchAggregator) startAutoWatch(full bool) {
 	c.cancelAutoWatch = cancel
 	go func() {
 		for {
-			var results <-chan client.Result
+			var results <-chan drand.Result
 			if full {
 				results = c.Watch(ctx)
 			} else if c.passiveClient != nil {
@@ -118,7 +118,7 @@ func (c *watchAggregator) startAutoWatch(full bool) {
 
 // passiveWatch is a degraded form of watch, where watch only hits the 'passive client'
 // unless distribution is actually needed.
-func (c *watchAggregator) passiveWatch(ctx context.Context) <-chan client.Result {
+func (c *watchAggregator) passiveWatch(ctx context.Context) <-chan drand.Result {
 	c.subscriberLock.Lock()
 	defer c.subscriberLock.Unlock()
 
@@ -127,7 +127,7 @@ func (c *watchAggregator) passiveWatch(ctx context.Context) <-chan client.Result
 		return nil
 	}
 
-	wc := make(chan client.Result)
+	wc := make(chan drand.Result)
 	if len(c.subscribers) == 0 {
 		ctx, cancel := context.WithCancel(ctx)
 		c.cancelPassive = cancel
@@ -139,11 +139,11 @@ func (c *watchAggregator) passiveWatch(ctx context.Context) <-chan client.Result
 	return wc
 }
 
-func (c *watchAggregator) Watch(ctx context.Context) <-chan client.Result {
+func (c *watchAggregator) Watch(ctx context.Context) <-chan drand.Result {
 	c.subscriberLock.Lock()
 	defer c.subscriberLock.Unlock()
 
-	sub := subscriber{ctx, make(chan client.Result, aggregatorWatchBuffer)}
+	sub := subscriber{ctx, make(chan drand.Result, aggregatorWatchBuffer)}
 	c.subscribers = append(c.subscribers, sub)
 
 	if len(c.subscribers) == 1 {
@@ -157,14 +157,14 @@ func (c *watchAggregator) Watch(ctx context.Context) <-chan client.Result {
 	return sub.c
 }
 
-func (c *watchAggregator) sink(in <-chan client.Result, out chan client.Result) {
+func (c *watchAggregator) sink(in <-chan drand.Result, out chan drand.Result) {
 	defer close(out)
 	for range in {
 		continue
 	}
 }
 
-func (c *watchAggregator) distribute(in <-chan client.Result, cancel context.CancelFunc) {
+func (c *watchAggregator) distribute(in <-chan drand.Result, cancel context.CancelFunc) {
 	defer cancel()
 	for {
 		c.subscriberLock.Lock()
@@ -176,7 +176,7 @@ func (c *watchAggregator) distribute(in <-chan client.Result, cancel context.Can
 		aCtx := c.subscribers[0].ctx
 		c.subscriberLock.Unlock()
 
-		var m client.Result
+		var m drand.Result
 		var ok bool
 
 		select {

@@ -11,10 +11,11 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/go-clients/drand"
+
 	"github.com/drand/drand/v2/common/log"
-	"github.com/drand/drand/v2/protobuf/drand"
-	client2 "github.com/drand/go-clients/client"
+	protod "github.com/drand/drand/v2/protobuf/drand"
+	"github.com/drand/go-clients/client"
 )
 
 // GossipRelayConfig configures a gossip-relay relay node.
@@ -27,7 +28,7 @@ type GossipRelayConfig struct {
 	IdentityPath string
 	CertPath     string
 	Insecure     bool
-	Client       client.Client
+	Client       drand.Client
 }
 
 // GossipRelayNode is a gossip-relay relay runtime.
@@ -125,7 +126,7 @@ func ParseMultiaddrSlice(peers []string) ([]ma.Multiaddr, error) {
 	return out, nil
 }
 
-func (g *GossipRelayNode) background(w client2.Watcher) {
+func (g *GossipRelayNode) background(w client.Watcher) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	for {
@@ -139,13 +140,13 @@ func (g *GossipRelayNode) background(w client2.Watcher) {
 					break LOOP
 				}
 
-				rd, ok := res.(*client2.RandomData)
+				rd, ok := res.(*client.RandomData)
 				if !ok {
 					g.l.Errorw("", "relay_node", "unexpected client result type")
 					continue
 				}
 
-				randB, err := proto.Marshal(&drand.PublicRandResponse{
+				randB, err := proto.Marshal(&protod.PublicRandResponse{
 					Round:             res.GetRound(),
 					Signature:         res.GetSignature(),
 					PreviousSignature: rd.GetPreviousSignature(),

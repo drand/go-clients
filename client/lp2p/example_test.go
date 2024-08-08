@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	clock "github.com/jonboulle/clockwork"
-
 	"github.com/drand/drand/v2/common"
 	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/log"
@@ -51,7 +49,7 @@ func ExampleNewPubsub() {
 	}
 
 	// NewWithPubSub will automatically register the topic for the chainhash you're interested in
-	c, err := gclient.NewWithPubsub(log.DefaultLogger(), ps, info, nil, clock.NewRealClock(), gclient.DefaultBufferSize)
+	c, err := gclient.NewWithPubsub(log.DefaultLogger(), ps, info, nil)
 	if err != nil {
 		panic(err)
 	}

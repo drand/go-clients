@@ -117,7 +117,7 @@ func ConstructHost(priv crypto.PrivKey, listenAddr string, bootstrap []ma.Multia
 			err := h.Connect(ctx, ai)
 			cancel()
 			if err != nil {
-				log.Warnw("", "construct_host", "could not bootstrap", "addr", ai)
+				log.Warnw("[ConstructHost] could not bootstrap", "with_addr", ai)
 			}
 		}
 	}()

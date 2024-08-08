@@ -6,16 +6,17 @@ import (
 
 	lru "github.com/hashicorp/golang-lru"
 
-	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/go-clients/drand"
+
 	"github.com/drand/drand/v2/common/log"
 )
 
 // Cache provides a mechanism to check for rounds in the cache.
 type Cache interface {
 	// TryGet provides a round beacon or nil if it is not cached.
-	TryGet(round uint64) client.Result
+	TryGet(round uint64) drand.Result
 	// Add adds an item to the cache
-	Add(uint64, client.Result)
+	Add(uint64, drand.Result)
 }
 
 // makeCache creates a cache of a given size
@@ -36,14 +37,14 @@ type typedCache struct {
 }
 
 // Add a result to the cache
-func (t *typedCache) Add(round uint64, result client.Result) {
+func (t *typedCache) Add(round uint64, result drand.Result) {
 	t.ARCCache.Add(round, result)
 }
 
 // TryGet attempts to get a result from the cache
-func (t *typedCache) TryGet(round uint64) client.Result {
+func (t *typedCache) TryGet(round uint64) drand.Result {
 	if val, ok := t.ARCCache.Get(round); ok {
-		return val.(client.Result)
+		return val.(drand.Result)
 	}
 	return nil
 }
@@ -52,17 +53,17 @@ func (t *typedCache) TryGet(round uint64) client.Result {
 type nilCache struct{}
 
 // Add a result to the cache
-func (*nilCache) Add(_ uint64, _ client.Result) {
+func (*nilCache) Add(_ uint64, _ drand.Result) {
 }
 
 // TryGet attempts to get ar esult from the cache
-func (*nilCache) TryGet(_ uint64) client.Result {
+func (*nilCache) TryGet(_ uint64) drand.Result {
 	return nil
 }
 
 // NewCachingClient is a meta client that stores an LRU cache of
 // recently fetched random values.
-func NewCachingClient(l log.Logger, c client.Client, cache Cache) (client.Client, error) {
+func NewCachingClient(l log.Logger, c drand.Client, cache Cache) (drand.Client, error) {
 	return &cachingClient{
 		Client: c,
 		cache:  cache,
@@ -71,7 +72,7 @@ func NewCachingClient(l log.Logger, c client.Client, cache Cache) (client.Client
 }
 
 type cachingClient struct {
-	client.Client
+	drand.Client
 
 	cache Cache
 	log   log.Logger
@@ -91,7 +92,7 @@ func (c *cachingClient) String() string {
 }
 
 // Get returns the randomness at `round` or an error.
-func (c *cachingClient) Get(ctx context.Context, round uint64) (res client.Result, err error) {
+func (c *cachingClient) Get(ctx context.Context, round uint64) (res drand.Result, err error) {
 	if val := c.cache.TryGet(round); val != nil {
 		return val, nil
 	}
@@ -102,9 +103,9 @@ func (c *cachingClient) Get(ctx context.Context, round uint64) (res client.Resul
 	return val, err
 }
 
-func (c *cachingClient) Watch(ctx context.Context) <-chan client.Result {
+func (c *cachingClient) Watch(ctx context.Context) <-chan drand.Result {
 	in := c.Client.Watch(ctx)
-	out := make(chan client.Result)
+	out := make(chan drand.Result)
 	go func() {
 		for result := range in {
 			if ctx.Err() != nil {

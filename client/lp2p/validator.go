@@ -8,7 +8,6 @@ import (
 	commonutils "github.com/drand/drand/v2/common"
 	"github.com/drand/go-clients/client"
 
-	clock "github.com/jonboulle/clockwork"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"google.golang.org/protobuf/proto"
@@ -18,7 +17,7 @@ import (
 	"github.com/drand/drand/v2/protobuf/drand"
 )
 
-func randomnessValidator(info *chain2.Info, cache client.Cache, c *Client, clk clock.Clock) pubsub.ValidatorEx {
+func randomnessValidator(info *chain2.Info, cache client.Cache, c *Client) pubsub.ValidatorEx {
 	var scheme *crypto.Scheme
 	if info != nil {
 		scheme, _ = crypto.GetSchemeByID(info.Scheme)
@@ -39,7 +38,7 @@ func randomnessValidator(info *chain2.Info, cache client.Cache, c *Client, clk c
 		}
 
 		// Unwilling to relay beacons in the future.
-		timeNow := clk.Now()
+		timeNow := time.Now()
 		timeOfRound := commonutils.TimeOfRound(info.Period, info.GenesisTime, rand.GetRound())
 		if time.Unix(timeOfRound, 0).After(timeNow) {
 			c.log.Warnw("",

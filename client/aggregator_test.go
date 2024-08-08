@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 	clientMock "github.com/drand/go-clients/client/mock"
 	"github.com/drand/go-clients/client/test/result/mock"
+	"github.com/drand/go-clients/drand"
 )
 
 func TestAggregatorClose(t *testing.T) {
@@ -16,7 +16,7 @@ func TestAggregatorClose(t *testing.T) {
 	wg.Add(1)
 
 	c := &clientMock.Client{
-		WatchCh: make(chan client.Result),
+		WatchCh: make(chan drand.Result),
 		CloseF: func() error {
 			wg.Done()
 			return nil
@@ -38,7 +38,7 @@ func TestAggregatorPassive(t *testing.T) {
 	wg.Add(1)
 
 	c := &clientMock.Client{
-		WatchCh: make(chan client.Result, 1),
+		WatchCh: make(chan drand.Result, 1),
 		CloseF: func() error {
 			wg.Done()
 			return nil
@@ -46,7 +46,7 @@ func TestAggregatorPassive(t *testing.T) {
 	}
 
 	wc := &clientMock.Client{
-		WatchCh: make(chan client.Result, 1),
+		WatchCh: make(chan drand.Result, 1),
 		CloseF: func() error {
 			return nil
 		},

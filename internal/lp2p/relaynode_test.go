@@ -11,26 +11,26 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/key"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
 
-	"github.com/drand/drand/v2/common/chain"
-	client2 "github.com/drand/drand/v2/common/client"
 	"github.com/drand/go-clients/client"
 	"github.com/drand/go-clients/client/test/result/mock"
+	"github.com/drand/go-clients/drand"
 )
 
 type mockClient struct {
 	chainInfo *chain.Info
-	watchF    func(context.Context) <-chan client2.Result
+	watchF    func(context.Context) <-chan drand.Result
 }
 
-func (c *mockClient) Get(_ context.Context, _ uint64) (client2.Result, error) {
+func (c *mockClient) Get(_ context.Context, _ uint64) (drand.Result, error) {
 	return nil, errors.New("unsupported")
 }
 
-func (c *mockClient) Watch(ctx context.Context) <-chan client2.Result {
+func (c *mockClient) Watch(ctx context.Context) <-chan drand.Result {
 	return c.watchF(ctx)
 }
 
@@ -85,8 +85,8 @@ func TestWatchRetryOnClose(t *testing.T) {
 	wg.Add(len(results))
 
 	// return a channel that writes one result then closes
-	watchF := func(context.Context) <-chan client2.Result {
-		ch := make(chan client2.Result, 1)
+	watchF := func(context.Context) <-chan drand.Result {
+		ch := make(chan drand.Result, 1)
 		if len(results) > 0 {
 			res := results[0]
 			results = results[1:]

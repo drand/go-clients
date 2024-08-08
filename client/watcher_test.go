@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drand/drand/v2/common/client"
 	clientMock "github.com/drand/go-clients/client/mock"
 	"github.com/drand/go-clients/client/test/result/mock"
+	"github.com/drand/go-clients/drand"
 )
 
 func TestWatcherWatch(t *testing.T) {
@@ -17,7 +17,7 @@ func TestWatcherWatch(t *testing.T) {
 		{Rnd: 2, Rand: []byte{2}},
 	}
 
-	ch := make(chan client.Result, len(results))
+	ch := make(chan drand.Result, len(results))
 	for i := range results {
 		ch <- &results[i]
 	}

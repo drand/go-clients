@@ -7,15 +7,15 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/go-clients/drand"
 )
 
 type watcherClient struct {
-	client.Client
+	drand.Client
 	watcher Watcher
 }
 
-func (c *watcherClient) Watch(ctx context.Context) <-chan client.Result {
+func (c *watcherClient) Watch(ctx context.Context) <-chan drand.Result {
 	return c.watcher.Watch(ctx)
 }
 
