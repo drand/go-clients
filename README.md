@@ -7,14 +7,14 @@ This repo contains most notably:
 
 # Migration from drand/drand
 
-Prior to drand V2 release, the drand client code lived in the drand/drand repo. Since its V2 release, the drand daemon code aims at being more minimalistic and having as little dependencies as possible.
+Prior to drand V2 release, the drand client code lived in the drand/drand repo. Since its V2 release, the drand daemon code aims at being more minimalist and having as few dependencies as possible.
 Most notably this meant removing the libp2p code that was exclusively used for Gossip relays and Gossip client, and also trimming down the amount of HTTP-related code.
 
-From now one, this repo is meant to provide the Go Client code to interact with drand, query drand beacons and verify them through either the HTTP or the Gossip relays.
+From now on, this repo is meant to provide the Go Client code to interact with drand, query drand beacons and verify them through either the HTTP or the Gossip relays.
 
-Notice that drand does not provide public GRPC endpoint since ~2020, therefore the GRPC client code has been moved to the internal of the relays (to allow relays to directly interface with a working daemon using GRPC).
+Note that drand does not provide public gRPC endpoints since ~2020, therefore the gRPC client code has been moved to the internal package of the relays (to allow relays to directly interface with a working daemon using gRPC).
 
-There are relatively little changes to the public APIs of the client code and simply using the `drand/go-clients/http` packages should be enough.
+There are relatively few changes to the public APIs of the client code and simply using the `drand/go-clients/http` packages should be enough.
 We recommend using `go-doc` to see the usage documentation and examples.
 
 ---
