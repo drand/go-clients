@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -44,7 +45,7 @@ func TestEmptyClient(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error")
 	}
-	if err.Error() != "not supported" {
+	if !errors.Is(err, drand.ErrEmptyClientUnsupportedGet) {
 		t.Fatal("unexpected error from Get", err)
 	}
 
