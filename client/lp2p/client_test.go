@@ -108,6 +108,7 @@ func TestGRPCClientTestFunc(t *testing.T) {
 }
 
 func drain(t *testing.T, ch <-chan drand.Result, timeout time.Duration) {
+	t.Helper()
 	for {
 		select {
 		case _, ok := <-ch:
