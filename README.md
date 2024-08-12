@@ -17,6 +17,25 @@ Notice that drand does not provide public GRPC endpoint since ~2020, therefore t
 There are relatively little changes to the public APIs of the client code and simply using the `drand/go-clients/http` packages should be enough.
 We recommend using `go-doc` to see the usage documentation and examples.
 
+## Most notable changes from the drand/drand V1 APIs
+
+The `Result` interface now follows the Protobuf getter format:
+```
+Result.Round() -> Result.GetRound()
+Result.Randomness() -> Result.GetRandomness()
+Result.Signature() -> Result.GetSignature()
+Result.PreviousSignature() -> Result.GetPreviousSignature()
+```
+meaning `PublicRandResponse` now satisfies directly the `Result` interface.
+
+The HTTP client now returns a concrete type and doesn't need to be cast to a HTTP client to use e.g. `SetUserAgent`.
+
+The client option `WithVerifiedResult` was renamed `WithTrustedResult`, to properly convey its function.
+
+Note also that among other packages you might be using in the `github.com/drand/drand/v2` packages, 
+the `crypto.GetSchemeByIDWithDefault` function was renamed `crypto.GetSchemeByID`; 
+and the `Beacon` struct now lives in the `github.com/drand/drand/v2/common` package rather than in the `chain` one.
+
 ---
 
 ### License

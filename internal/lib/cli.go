@@ -21,7 +21,6 @@ import (
 
 	"github.com/drand/drand/v2/common/key"
 
-	commonutils "github.com/drand/drand/v2/common"
 	chainCommon "github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/go-clients/client"
@@ -165,7 +164,7 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 		if info != nil && !bytes.Equal(hash, info.Hash()) {
 			return nil, fmt.Errorf(
 				"%w for beacon %s %v != %v",
-				commonutils.ErrInvalidChainHash,
+				drand.ErrInvalidChainHash,
 				info.ID,
 				c.String(HashFlag.Name),
 				hex.EncodeToString(info.Hash()),
@@ -190,7 +189,7 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	if info != nil && hash != nil && !bytes.Equal(hash, info.Hash()) {
 		return nil, fmt.Errorf(
 			"%w for beacon %s : expected %v != info %v",
-			commonutils.ErrInvalidChainHash,
+			drand.ErrInvalidChainHash,
 			info.ID,
 			hex.EncodeToString(hash),
 			hex.EncodeToString(info.Hash()),

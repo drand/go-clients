@@ -33,7 +33,7 @@ func (m *emptyClient) RoundAt(t time.Time) uint64 {
 }
 
 func (m *emptyClient) Get(_ context.Context, _ uint64) (drand.Result, error) {
-	return nil, common.ErrEmptyClientUnsupportedGet
+	return nil, drand.ErrEmptyClientUnsupportedGet
 }
 
 func (m *emptyClient) Watch(_ context.Context) <-chan drand.Result {
