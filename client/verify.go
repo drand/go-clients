@@ -7,20 +7,20 @@ import (
 
 	"github.com/drand/drand/v2/common"
 	chain2 "github.com/drand/drand/v2/common/chain"
-	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
+	"github.com/drand/go-clients/drand"
 )
 
 type verifyingClient struct {
 	// Client is the wrapped client. calls to `get` and `watch` return results proxied from this client's fetch
-	client.Client
+	drand.Client
 
 	// indirectClient is used to fetch other rounds of randomness needed for verification.
 	// it is separated so that it can provide a cache or shared pool that the direct client may not.
-	indirectClient client.Client
+	indirectClient drand.Client
 
-	pointOfTrust client.Result
+	pointOfTrust drand.Result
 	potLk        sync.Mutex
 	strict       bool
 
@@ -29,7 +29,7 @@ type verifyingClient struct {
 }
 
 // newVerifyingClient wraps a client to perform `chain.Verify` on emitted results.
-func newVerifyingClient(c client.Client, previousResult client.Result, strict bool, sch *crypto.Scheme) client.Client {
+func newVerifyingClient(c drand.Client, previousResult drand.Result, strict bool, sch *crypto.Scheme) drand.Client {
 	return &verifyingClient{
 		Client:         c,
 		indirectClient: c,
@@ -46,7 +46,7 @@ func (v *verifyingClient) SetLog(l log.Logger) {
 }
 
 // Get returns a requested round of randomness
-func (v *verifyingClient) Get(ctx context.Context, round uint64) (client.Result, error) {
+func (v *verifyingClient) Get(ctx context.Context, round uint64) (drand.Result, error) {
 	info, err := v.indirectClient.Info(ctx)
 	if err != nil {
 		return nil, err
@@ -66,8 +66,8 @@ func (v *verifyingClient) Get(ctx context.Context, round uint64) (client.Result,
 }
 
 // Watch returns new randomness as it becomes available.
-func (v *verifyingClient) Watch(ctx context.Context) <-chan client.Result {
-	outCh := make(chan client.Result, 1)
+func (v *verifyingClient) Watch(ctx context.Context) <-chan drand.Result {
+	outCh := make(chan drand.Result, 1)
 
 	info, err := v.indirectClient.Info(ctx)
 	if err != nil {
@@ -95,7 +95,7 @@ type resultWithPreviousSignature interface {
 	GetPreviousSignature() []byte
 }
 
-func asRandomData(r client.Result) *RandomData {
+func asRandomData(r drand.Result) *RandomData {
 	rd, ok := r.(*RandomData)
 	if ok {
 		rd.Random = crypto.RandomnessFromSignature(rd.GetSignature())
@@ -142,7 +142,7 @@ func (v *verifyingClient) getTrustedPreviousSignature(ctx context.Context, round
 	}
 	initialTrustRound := trustRound
 
-	var next client.Result
+	var next drand.Result
 	for trustRound < round-1 {
 		trustRound++
 		v.log.Warnw("", "verifying_client", "loading round to verify", "round", trustRound)

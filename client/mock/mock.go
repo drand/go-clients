@@ -7,21 +7,19 @@ import (
 	"time"
 
 	commonutils "github.com/drand/drand/v2/common"
-	chain2 "github.com/drand/drand/v2/common/chain"
-	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/go-clients/client/test/result/mock"
+	"github.com/drand/go-clients/drand"
 )
-
-var _ client.Client = &Client{}
 
 // Client provide a mocked client interface
 //
 //nolint:gocritic
 type Client struct {
 	sync.Mutex
-	OptionalInfo *chain2.Info
-	WatchCh      chan client.Result
-	WatchF       func(context.Context) <-chan client.Result
+	OptionalInfo *chain.Info
+	WatchCh      chan drand.Result
+	WatchF       func(context.Context) <-chan drand.Result
 	Results      []mock.Result
 	// Delay causes results to be delivered after this period of time has
 	// passed. Note that if the context is canceled a result is still consumed
@@ -41,7 +39,7 @@ func (m *Client) String() string {
 }
 
 // Get returns the randomness at `round` or an error.
-func (m *Client) Get(ctx context.Context, round uint64) (client.Result, error) {
+func (m *Client) Get(ctx context.Context, round uint64) (drand.Result, error) {
 	m.Lock()
 	if len(m.Results) == 0 {
 		m.Unlock()
@@ -73,14 +71,14 @@ func (m *Client) Get(ctx context.Context, round uint64) (client.Result, error) {
 }
 
 // Watch returns new randomness as it becomes available.
-func (m *Client) Watch(ctx context.Context) <-chan client.Result {
+func (m *Client) Watch(ctx context.Context) <-chan drand.Result {
 	if m.WatchCh != nil {
 		return m.WatchCh
 	}
 	if m.WatchF != nil {
 		return m.WatchF(ctx)
 	}
-	ch := make(chan client.Result, 1)
+	ch := make(chan drand.Result, 1)
 	r, err := m.Get(ctx, 0)
 	if err == nil {
 		ch <- r
@@ -89,7 +87,7 @@ func (m *Client) Watch(ctx context.Context) <-chan client.Result {
 	return ch
 }
 
-func (m *Client) Info(_ context.Context) (*chain2.Info, error) {
+func (m *Client) Info(_ context.Context) (*chain.Info, error) {
 	if m.OptionalInfo != nil {
 		return m.OptionalInfo, nil
 	}
@@ -119,19 +117,19 @@ func ClientWithResults(n, m uint64) *Client {
 }
 
 // ClientWithInfo makes a client that returns the given info but no randomness
-func ClientWithInfo(info *chain2.Info) client.Client {
+func ClientWithInfo(info *chain.Info) *InfoClient {
 	return &InfoClient{info}
 }
 
 type InfoClient struct {
-	i *chain2.Info
+	i *chain.Info
 }
 
 func (m *InfoClient) String() string {
 	return "MockInfo"
 }
 
-func (m *InfoClient) Info(_ context.Context) (*chain2.Info, error) {
+func (m *InfoClient) Info(_ context.Context) (*chain.Info, error) {
 	return m.i, nil
 }
 
@@ -139,12 +137,12 @@ func (m *InfoClient) RoundAt(t time.Time) uint64 {
 	return commonutils.CurrentRound(t.Unix(), m.i.Period, m.i.GenesisTime)
 }
 
-func (m *InfoClient) Get(_ context.Context, _ uint64) (client.Result, error) {
+func (m *InfoClient) Get(_ context.Context, _ uint64) (drand.Result, error) {
 	return nil, errors.New("not supported (mock info client get)")
 }
 
-func (m *InfoClient) Watch(_ context.Context) <-chan client.Result {
-	ch := make(chan client.Result, 1)
+func (m *InfoClient) Watch(_ context.Context) <-chan drand.Result {
+	ch := make(chan drand.Result, 1)
 	close(ch)
 	return ch
 }

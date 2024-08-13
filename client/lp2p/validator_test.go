@@ -27,22 +27,6 @@ import (
 	"github.com/drand/go-clients/client/test/cache"
 )
 
-type randomDataWrapper struct {
-	data client.RandomData
-}
-
-func (r *randomDataWrapper) GetRound() uint64 {
-	return r.data.Rnd
-}
-
-func (r *randomDataWrapper) GetSignature() []byte {
-	return r.data.Sig
-}
-
-func (r *randomDataWrapper) GetRandomness() []byte {
-	return r.data.Random
-}
-
 func randomPeerID(t *testing.T) peer.ID {
 	priv, _, err := crypto.GenerateEd25519Key(rand.Reader)
 	if err != nil {
@@ -91,8 +75,7 @@ func fakeChainInfo() *chain2.Info {
 
 func TestRejectsUnmarshalBeaconFailure(t *testing.T) {
 	c := Client{log: log.New(nil, log.DebugLevel, true)}
-	clk := clock.NewFakeClock()
-	validate := randomnessValidator(fakeChainInfo(), nil, &c, clk)
+	validate := randomnessValidator(fakeChainInfo(), nil, &c)
 
 	msg := pubsub.Message{Message: &pb.Message{}}
 	res := validate(context.Background(), randomPeerID(t), &msg)
@@ -104,8 +87,7 @@ func TestRejectsUnmarshalBeaconFailure(t *testing.T) {
 
 func TestAcceptsWithoutTrustRoot(t *testing.T) {
 	c := Client{log: log.New(nil, log.DebugLevel, true)}
-	clk := clock.NewFakeClock()
-	validate := randomnessValidator(nil, nil, &c, clk)
+	validate := randomnessValidator(nil, nil, &c)
 
 	resp := drand.PublicRandResponse{}
 	data, err := proto.Marshal(&resp)
@@ -123,8 +105,7 @@ func TestAcceptsWithoutTrustRoot(t *testing.T) {
 func TestRejectsFutureBeacons(t *testing.T) {
 	info := fakeChainInfo()
 	c := Client{log: log.New(nil, log.DebugLevel, true)}
-	clk := clock.NewFakeClock()
-	validate := randomnessValidator(info, nil, &c, clk)
+	validate := randomnessValidator(info, nil, &c)
 
 	resp := drand.PublicRandResponse{
 		Round: common.CurrentRound(time.Now().Unix(), info.Period, info.GenesisTime) + 5,
@@ -144,8 +125,7 @@ func TestRejectsFutureBeacons(t *testing.T) {
 func TestRejectsVerifyBeaconFailure(t *testing.T) {
 	info := fakeChainInfo()
 	c := Client{log: log.New(nil, log.DebugLevel, true)}
-	clk := clock.NewFakeClock()
-	validate := randomnessValidator(info, nil, &c, clk)
+	validate := randomnessValidator(info, nil, &c)
 
 	resp := drand.PublicRandResponse{
 		Round: common.CurrentRound(time.Now().Unix(), info.Period, info.GenesisTime),
@@ -168,7 +148,7 @@ func TestIgnoresCachedEqualBeacon(t *testing.T) {
 	ca := cache.NewMapCache()
 	c := Client{log: log.New(nil, log.DebugLevel, true)}
 	clk := clock.NewFakeClockAt(time.Now())
-	validate := randomnessValidator(info, ca, &c, clk)
+	validate := randomnessValidator(info, ca, &c)
 	rdata := fakeRandomData(info, clk)
 
 	ca.Add(rdata.Rnd, &rdata)
@@ -196,7 +176,7 @@ func TestRejectsCachedUnequalBeacon(t *testing.T) {
 	ca := cache.NewMapCache()
 	c := Client{log: log.New(nil, log.DebugLevel, true)}
 	clk := clock.NewFakeClock()
-	validate := randomnessValidator(info, ca, &c, clk)
+	validate := randomnessValidator(info, ca, &c)
 	rdata := fakeRandomData(info, clk)
 
 	ca.Add(rdata.Rnd, &rdata)
@@ -227,15 +207,15 @@ func TestIgnoresCachedEqualNonRandomDataBeacon(t *testing.T) {
 	ca := cache.NewMapCache()
 	c := Client{log: log.New(nil, log.DebugLevel, true)}
 	clk := clock.NewFakeClockAt(time.Now())
-	validate := randomnessValidator(info, ca, &c, clk)
-	rdata := randomDataWrapper{fakeRandomData(info, clk)}
+	validate := randomnessValidator(info, ca, &c)
+	rdata := fakeRandomData(info, clk)
 
 	ca.Add(rdata.GetRound(), &rdata)
 
 	resp := drand.PublicRandResponse{
 		Round:             rdata.GetRound(),
 		Signature:         rdata.GetSignature(),
-		PreviousSignature: rdata.data.PreviousSignature,
+		PreviousSignature: rdata.GetPreviousSignature(),
 		Randomness:        rdata.GetRandomness(),
 	}
 	data, err := proto.Marshal(&resp)
@@ -255,8 +235,8 @@ func TestRejectsCachedEqualNonRandomDataBeacon(t *testing.T) {
 	ca := cache.NewMapCache()
 	c := Client{log: log.New(nil, log.DebugLevel, true)}
 	clk := clock.NewFakeClock()
-	validate := randomnessValidator(info, ca, &c, clk)
-	rdata := randomDataWrapper{fakeRandomData(info, clk)}
+	validate := randomnessValidator(info, ca, &c)
+	rdata := fakeRandomData(info, clk)
 
 	ca.Add(rdata.GetRound(), &rdata)
 
@@ -266,7 +246,7 @@ func TestRejectsCachedEqualNonRandomDataBeacon(t *testing.T) {
 	resp := drand.PublicRandResponse{
 		Round:             rdata.GetRound(),
 		Signature:         sig, // incoming message has incorrect sig
-		PreviousSignature: rdata.data.PreviousSignature,
+		PreviousSignature: rdata.GetPreviousSignature(),
 		Randomness:        rdata.GetRandomness(),
 	}
 	data, err := proto.Marshal(&resp)

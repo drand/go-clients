@@ -7,17 +7,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/drand/go-clients/drand"
 	clock "github.com/jonboulle/clockwork"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 
 	"github.com/drand/drand/v2/common"
 	"github.com/drand/drand/v2/common/chain"
-	"github.com/drand/drand/v2/common/client"
+	old "github.com/drand/drand/v2/common/client"
 	dhttp "github.com/drand/drand/v2/handler/http"
-	"github.com/drand/drand/v2/protobuf/drand"
+	proto "github.com/drand/drand/v2/protobuf/drand"
 	"github.com/drand/drand/v2/test/mock"
-	localClient "github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client"
 
 	"github.com/drand/drand/v2/crypto"
 )
@@ -27,7 +28,7 @@ func NewMockHTTPPublicServer(t *testing.T, badSecondRound bool, sch *crypto.Sche
 	t.Helper()
 
 	server := mock.NewMockServer(t, badSecondRound, sch, clk)
-	client := Proxy(server)
+	c := Proxy(server)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -38,7 +39,7 @@ func NewMockHTTPPublicServer(t *testing.T, badSecondRound bool, sch *crypto.Sche
 
 	var chainInfo *chain.Info
 	for i := 0; i < 3; i++ {
-		protoInfo, err := server.ChainInfo(ctx, &drand.ChainInfoRequest{})
+		protoInfo, err := server.ChainInfo(ctx, &proto.ChainInfoRequest{})
 		if err != nil {
 			t.Error("MockServer.ChainInfo error:", err)
 			time.Sleep(10 * time.Millisecond)
@@ -59,7 +60,7 @@ func NewMockHTTPPublicServer(t *testing.T, badSecondRound bool, sch *crypto.Sche
 
 	t.Log("MockServer.ChainInfo:", chainInfo)
 
-	handler.RegisterDefaultBeaconHandler(handler.RegisterNewBeaconHandler(client, chainInfo.HashString()))
+	handler.RegisterDefaultBeaconHandler(handler.RegisterNewBeaconHandler(c, chainInfo.HashString()))
 
 	listener, err := net.Listen("tcp", ":0")
 	if err != nil {
@@ -78,12 +79,13 @@ func NewMockHTTPPublicServer(t *testing.T, badSecondRound bool, sch *crypto.Sche
 // drandProxy is used as a proxy between a Public service (e.g. the node as a server)
 // and a Public Client (the client consumed by the HTTP API)
 type drandProxy struct {
-	r drand.PublicServer
+	r         proto.PublicServer
+	proxyChan chan old.Result
 }
 
-// Proxy wraps a server interface into a client interface so it can be queried
-func Proxy(s drand.PublicServer) client.Client {
-	return &drandProxy{s}
+// Proxy wraps a server interface into an old client interface so it can be queried
+func Proxy(s proto.PublicServer) old.Client {
+	return &drandProxy{s, nil}
 }
 
 // String returns the name of this proxy.
@@ -92,12 +94,12 @@ func (d *drandProxy) String() string {
 }
 
 // Get returns randomness at a requested round
-func (d *drandProxy) Get(ctx context.Context, round uint64) (client.Result, error) {
-	resp, err := d.r.PublicRand(ctx, &drand.PublicRandRequest{Round: round})
+func (d *drandProxy) Get(ctx context.Context, round uint64) (old.Result, error) {
+	resp, err := d.r.PublicRand(ctx, &proto.PublicRandRequest{Round: round})
 	if err != nil {
 		return nil, err
 	}
-	return &localClient.RandomData{
+	return &client.RandomData{
 		Rnd:               resp.GetRound(),
 		Random:            crypto.RandomnessFromSignature(resp.GetSignature()),
 		Sig:               resp.GetSignature(),
@@ -106,21 +108,36 @@ func (d *drandProxy) Get(ctx context.Context, round uint64) (client.Result, erro
 }
 
 // Watch returns new randomness as it becomes available.
-func (d *drandProxy) Watch(ctx context.Context) <-chan client.Result {
+func (d *drandProxy) Watch(ctx context.Context) <-chan old.Result {
 	proxy := newStreamProxy(ctx)
 	go func() {
-		err := d.r.PublicRandStream(&drand.PublicRandRequest{}, proxy)
+		err := d.r.PublicRandStream(&proto.PublicRandRequest{}, proxy)
 		if err != nil {
 			proxy.Close()
 		}
 	}()
-	return proxy.outgoing
+
+	ch := make(chan old.Result, 1)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				close(ch)
+				return
+			case in := <-proxy.outgoing:
+				ch <- old.Result(in)
+			}
+		}
+
+	}()
+	d.proxyChan = ch
+	return ch
 }
 
 // Info returns the parameters of the chain this client is connected to.
 // The public key, when it started, and how frequently it updates.
 func (d *drandProxy) Info(ctx context.Context) (*chain.Info, error) {
-	info, err := d.r.ChainInfo(ctx, &drand.ChainInfoRequest{})
+	info, err := d.r.ChainInfo(ctx, &proto.ChainInfoRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +164,7 @@ func (d *drandProxy) Close() error {
 type streamProxy struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
-	outgoing chan client.Result
+	outgoing chan drand.Result
 }
 
 func newStreamProxy(ctx context.Context) *streamProxy {
@@ -155,12 +172,12 @@ func newStreamProxy(ctx context.Context) *streamProxy {
 	s := streamProxy{
 		ctx:      ctx,
 		cancel:   cancel,
-		outgoing: make(chan client.Result, 1),
+		outgoing: make(chan drand.Result, 1),
 	}
 	return &s
 }
 
-func (s *streamProxy) Send(next *drand.PublicRandResponse) error {
+func (s *streamProxy) Send(next *proto.PublicRandResponse) error {
 	d := common.Beacon{
 		Round:       next.Round,
 		Signature:   next.Signature,

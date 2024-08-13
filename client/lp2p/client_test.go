@@ -16,8 +16,11 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/require"
 
-	chain2 "github.com/drand/drand/v2/common/chain"
-	"github.com/drand/drand/v2/common/client"
+	"github.com/drand/drand/v2/test/mock"
+	"github.com/drand/go-clients/drand"
+	"github.com/drand/go-clients/internal/grpc"
+
+	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
 	dhttp "github.com/drand/go-clients/client/http"
@@ -25,87 +28,87 @@ import (
 	"github.com/drand/go-clients/internal/lp2p"
 )
 
-//
-// func TestGRPCClientTestFunc(t *testing.T) {
-//	lg := log.New(nil, log.DebugLevel, true)
-//	// start mock drand node
-//	sch, err := crypto.GetSchemeFromEnv()
-//	require.NoError(t, err)
-//
-//	clk := clock.NewFakeClockAt(time.Now())
-//
-//	grpcLis, svc := mock.NewMockGRPCPublicServer(t, lg, "127.0.0.1:0", false, sch, clk)
-//	grpcAddr := grpcLis.Addr()
-//	go grpcLis.Start()
-//	defer grpcLis.Stop(context.Background())
-//
-//	dataDir := t.TempDir()
-//	identityDir := t.TempDir()
-//
-//	infoProto, err := svc.ChainInfo(context.Background(), nil)
-//	require.NoError(t, err)
-//
-//	info, err := chain2.InfoFromProto(infoProto)
-//	require.NoError(t, err)
-//
-//	// start mock relay-node
-//	grpcClient, err := grpc.New(lg, grpcAddr, "", true, []byte(""))
-//	require.NoError(t, err)
-//
-//	cfg := &lp2p.GossipRelayConfig{
-//		ChainHash:    info.HashString(),
-//		PeerWith:     nil,
-//		Addr:         "/ip4/127.0.0.1/tcp/" + test.FreePort(),
-//		DataDir:      dataDir,
-//		IdentityPath: path.Join(identityDir, "identity.key"),
-//		Client:       grpcClient,
-//	}
-//	g, err := lp2p.NewGossipRelayNode(lg, cfg)
-//	require.NoError(t, err, "gossip relay node")
-//
-//	defer g.Shutdown()
-//
-//	// start client
-//	c, err := newTestClient(t, g.Multiaddrs(), info, clk)
-//	require.NoError(t, err)
-//	defer func() {
-//		err := c.Close()
-//		require.NoError(t, err)
-//	}()
-//
-//	// test client
-//	ctx, cancel := context.WithCancel(context.Background())
-//	ch := c.Watch(ctx)
-//
-//	baseRound := uint64(1969)
-//
-//	mockService := svc.(mock.Service)
-//	// pub sub polls every 200ms
-//	wait := 250 * time.Millisecond
-//	for i := uint64(0); i < 3; i++ {
-//		time.Sleep(wait)
-//		mockService.EmitRand(false)
-//		t.Logf("round %d emitted\n", baseRound+i)
-//
-//		select {
-//		case r, ok := <-ch:
-//			require.True(t, ok, "expected randomness, watch outer channel was closed instead")
-//			t.Logf("received round %d\n", r.Round())
-//			require.Equal(t, baseRound+i, r.Round())
-//		// the period of the mock servers is 1 second
-//		case <-time.After(5 * time.Second):
-//			t.Fatal("timeout.")
-//		}
-//	}
-//
-//	time.Sleep(wait)
-//	mockService.EmitRand(true)
-//	cancel()
-//
-//	drain(t, ch, 5*time.Second)
-//}
+func TestGRPCClientTestFunc(t *testing.T) {
+	lg := log.New(nil, log.DebugLevel, true)
+	// start mock drand node
+	sch, err := crypto.GetSchemeFromEnv()
+	require.NoError(t, err)
 
-func drain(t *testing.T, ch <-chan client.Result, timeout time.Duration) {
+	clk := clock.NewFakeClockAt(time.Now())
+
+	grpcLis, svc := mock.NewMockGRPCPublicServer(t, lg, "127.0.0.1:0", false, sch, clk)
+	grpcAddr := grpcLis.Addr()
+	go grpcLis.Start()
+	defer grpcLis.Stop(context.Background())
+
+	dataDir := t.TempDir()
+	identityDir := t.TempDir()
+
+	infoProto, err := svc.ChainInfo(context.Background(), nil)
+	require.NoError(t, err)
+
+	info, err := chain.InfoFromProto(infoProto)
+	require.NoError(t, err)
+
+	// start mock relay-node
+	grpcClient, err := grpc.New(grpcAddr, true, []byte(""))
+	require.NoError(t, err)
+
+	cfg := &lp2p.GossipRelayConfig{
+		ChainHash:    info.HashString(),
+		PeerWith:     nil,
+		Addr:         "/ip4/127.0.0.1/tcp/0",
+		DataDir:      dataDir,
+		IdentityPath: path.Join(identityDir, "identity.key"),
+		Client:       grpcClient,
+	}
+	g, err := lp2p.NewGossipRelayNode(lg, cfg)
+	require.NoError(t, err, "gossip relay node")
+
+	defer g.Shutdown()
+
+	// start client
+	c, err := newTestClient(t, g.Multiaddrs(), info, clk)
+	require.NoError(t, err)
+	defer func() {
+		err := c.Close()
+		require.NoError(t, err)
+	}()
+
+	// test client
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := c.Watch(ctx)
+
+	baseRound := uint64(1969)
+
+	mockService := svc.(mock.Service)
+	// pub sub polls every 200ms
+	wait := 250 * time.Millisecond
+	for i := uint64(0); i < 3; i++ {
+		time.Sleep(wait)
+		mockService.EmitRand(false)
+		t.Logf("round %d emitted\n", baseRound+i)
+
+		select {
+		case r, ok := <-ch:
+			require.True(t, ok, "expected randomness, watch outer channel was closed instead")
+			t.Logf("received round %d\n", r.GetRound())
+			require.Equal(t, baseRound+i, r.GetRound())
+		// the period of the mock servers is 1 second
+		case <-time.After(5 * time.Second):
+			t.Fatal("timeout.")
+		}
+	}
+
+	time.Sleep(wait)
+	mockService.EmitRand(true)
+	cancel()
+
+	drain(t, ch, 5*time.Second)
+}
+
+func drain(t *testing.T, ch <-chan drand.Result, timeout time.Duration) {
+	t.Helper()
 	for {
 		select {
 		case _, ok := <-ch:
@@ -178,7 +181,7 @@ func TestHTTPClientTestFunc(t *testing.T) {
 	drain(t, ch, 5*time.Second)
 }
 
-func newTestClient(t *testing.T, relayMultiaddr []ma.Multiaddr, info *chain2.Info, clk clock.Clock) (*Client, error) {
+func newTestClient(t *testing.T, relayMultiaddr []ma.Multiaddr, info *chain.Info, clk clock.Clock) (*Client, error) {
 	identityDir := t.TempDir()
 
 	lg := log.New(nil, log.DebugLevel, true)
@@ -186,7 +189,7 @@ func newTestClient(t *testing.T, relayMultiaddr []ma.Multiaddr, info *chain2.Inf
 	if err != nil {
 		return nil, err
 	}
-	h, ps, err := lp2p.ConstructHost(priv, "/ip4/0.0.0.0/tcp/"+strconv.Itoa(freeport.GetOne(t)), relayMultiaddr, lg)
+	h, ps, err := lp2p.ConstructHost(priv, "/ip4/0.0.0.0/tcp/0", relayMultiaddr, lg)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +201,7 @@ func newTestClient(t *testing.T, relayMultiaddr []ma.Multiaddr, info *chain2.Inf
 	if err != nil {
 		return nil, err
 	}
-	c, err := NewWithPubsub(lg, ps, info, nil, clk, 100)
+	c, err := NewWithPubsub(lg, ps, info, nil)
 	if err != nil {
 		return nil, err
 	}

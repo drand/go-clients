@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
 	clientMock "github.com/drand/go-clients/client/mock"
 	"github.com/drand/go-clients/client/test/result/mock"
+	"github.com/drand/go-clients/drand"
 )
 
 // waitForSpeedTest waits until all clients have had their initial speed test.
-func waitForSpeedTest(t *testing.T, c client.Client, timeout time.Duration) {
+func waitForSpeedTest(t *testing.T, c drand.Client, timeout time.Duration) {
 	t.Helper()
 	oc, ok := c.(*optimizingClient)
 	if !ok {
@@ -49,14 +49,14 @@ func waitForSpeedTest(t *testing.T, c client.Client, timeout time.Duration) {
 	}
 }
 
-func expectRound(t *testing.T, res client.Result, r uint64) {
+func expectRound(t *testing.T, res drand.Result, r uint64) {
 	t.Helper()
 	if res.GetRound() != r {
 		t.Fatalf("expected round %v, got %v", r, res.GetRound())
 	}
 }
 
-func closeClient(t *testing.T, c client.Client) {
+func closeClient(t *testing.T, c drand.Client) {
 	t.Helper()
 	err := c.Close()
 	if err != nil {
@@ -72,7 +72,7 @@ func TestOptimizingGet(t *testing.T) {
 	c1.Delay = time.Millisecond
 
 	lg := log.New(nil, log.DebugLevel, true)
-	oc, err := newOptimizingClient(lg, []client.Client{c0, c1}, time.Second*5, 2, time.Minute*5, 0)
+	oc, err := newOptimizingClient(lg, []drand.Client{c0, c1}, time.Second*5, 2, time.Minute*5, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,13 +97,13 @@ func TestOptimizingWatch(t *testing.T) {
 	c1 := clientMock.ClientWithResults(5, 8)
 	c2 := clientMock.ClientWithInfo(fakeChainInfo(t))
 
-	wc1 := make(chan client.Result, 5)
+	wc1 := make(chan drand.Result, 5)
 	c1.WatchCh = wc1
 
 	c0.Delay = time.Millisecond
 
 	lg := log.New(nil, log.DebugLevel, true)
-	oc, err := newOptimizingClient(lg, []client.Client{c0, c1, c2}, time.Second*5, 2, time.Minute*5, 0)
+	oc, err := newOptimizingClient(lg, []drand.Client{c0, c1, c2}, time.Second*5, 2, time.Minute*5, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,8 +135,8 @@ func TestOptimizingWatchRetryOnClose(t *testing.T) {
 		// a single result for the speed test
 		Results: []mock.Result{mock.NewMockResult(0)},
 		// return a watch channel that yields one result then closes
-		WatchF: func(context.Context) <-chan client.Result {
-			ch := make(chan client.Result, 1)
+		WatchF: func(context.Context) <-chan drand.Result {
+			ch := make(chan drand.Result, 1)
 			r := mock.NewMockResult(rnd)
 			rnd++
 			ch <- &r
@@ -146,7 +146,7 @@ func TestOptimizingWatchRetryOnClose(t *testing.T) {
 	}
 
 	lg := log.New(nil, log.DebugLevel, true)
-	oc, err := newOptimizingClient(lg, []client.Client{c}, 0, 0, 0, time.Millisecond)
+	oc, err := newOptimizingClient(lg, []drand.Client{c}, 0, 0, 0, time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,10 +176,10 @@ func TestOptimizingWatchFailover(t *testing.T) {
 
 	var rndlk sync.Mutex
 	var rnd uint64 = 1
-	wf := func(context.Context) <-chan client.Result {
+	wf := func(context.Context) <-chan drand.Result {
 		rndlk.Lock()
 		defer rndlk.Unlock()
-		ch := make(chan client.Result, 1)
+		ch := make(chan drand.Result, 1)
 		r := mock.NewMockResult(rnd)
 		rnd++
 		if rnd < 5 {
@@ -198,7 +198,7 @@ func TestOptimizingWatchFailover(t *testing.T) {
 	}
 
 	lg := log.New(nil, log.DebugLevel, true)
-	oc, err := newOptimizingClient(lg, []client.Client{clientMock.ClientWithInfo(chainInfo), c1, c2}, 0, 0, 0, time.Millisecond)
+	oc, err := newOptimizingClient(lg, []drand.Client{clientMock.ClientWithInfo(chainInfo), c1, c2}, 0, 0, 0, time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +226,7 @@ func TestOptimizingWatchFailover(t *testing.T) {
 
 func TestOptimizingRequiresClients(t *testing.T) {
 	lg := log.New(nil, log.DebugLevel, true)
-	_, err := newOptimizingClient(lg, []client.Client{}, 0, 0, 0, 0)
+	_, err := newOptimizingClient(lg, []drand.Client{}, 0, 0, 0, 0)
 	if err == nil {
 		t.Fatal("expected err is nil but it shouldn't be")
 	}
@@ -237,7 +237,7 @@ func TestOptimizingRequiresClients(t *testing.T) {
 
 func TestOptimizingIsLogging(t *testing.T) {
 	lg := log.New(nil, log.DebugLevel, true)
-	oc, err := newOptimizingClient(lg, []client.Client{&clientMock.Client{}}, 0, 0, 0, 0)
+	oc, err := newOptimizingClient(lg, []drand.Client{&clientMock.Client{}}, 0, 0, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +246,7 @@ func TestOptimizingIsLogging(t *testing.T) {
 
 func TestOptimizingIsCloser(t *testing.T) {
 	lg := log.New(nil, log.DebugLevel, true)
-	oc, err := newOptimizingClient(lg, []client.Client{&clientMock.Client{}}, 0, 0, 0, 0)
+	oc, err := newOptimizingClient(lg, []drand.Client{&clientMock.Client{}}, 0, 0, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,7 +260,7 @@ func TestOptimizingIsCloser(t *testing.T) {
 func TestOptimizingInfo(t *testing.T) {
 	lg := log.New(nil, log.DebugLevel, true)
 	chainInfo := fakeChainInfo(t)
-	oc, err := newOptimizingClient(lg, []client.Client{clientMock.ClientWithInfo(chainInfo)}, 0, 0, 0, 0)
+	oc, err := newOptimizingClient(lg, []drand.Client{clientMock.ClientWithInfo(chainInfo)}, 0, 0, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -276,7 +276,7 @@ func TestOptimizingInfo(t *testing.T) {
 
 func TestOptimizingRoundAt(t *testing.T) {
 	lg := log.New(nil, log.DebugLevel, true)
-	oc, err := newOptimizingClient(lg, []client.Client{&clientMock.Client{}}, 0, 0, 0, 0)
+	oc, err := newOptimizingClient(lg, []drand.Client{&clientMock.Client{}}, 0, 0, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,9 +295,9 @@ func TestOptimizingClose(t *testing.T) {
 		return nil
 	}
 
-	clients := []client.Client{
-		&clientMock.Client{WatchCh: make(chan client.Result), CloseF: closeF},
-		&clientMock.Client{WatchCh: make(chan client.Result), CloseF: closeF},
+	clients := []drand.Client{
+		&clientMock.Client{WatchCh: make(chan drand.Result), CloseF: closeF},
+		&clientMock.Client{WatchCh: make(chan drand.Result), CloseF: closeF},
 	}
 
 	wg.Add(len(clients))

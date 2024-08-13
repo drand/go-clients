@@ -12,14 +12,15 @@ import (
 	"google.golang.org/grpc/credentials"
 	grpcInsec "google.golang.org/grpc/credentials/insecure"
 
+	"github.com/drand/go-clients/drand"
+
 	"github.com/drand/drand/v2/crypto"
 
 	commonutils "github.com/drand/drand/v2/common"
 	"github.com/drand/drand/v2/common/chain"
-	"github.com/drand/drand/v2/common/client"
 	"github.com/drand/drand/v2/common/log"
-	"github.com/drand/drand/v2/protobuf/drand"
-	localClient "github.com/drand/go-clients/client"
+	proto "github.com/drand/drand/v2/protobuf/drand"
+	"github.com/drand/go-clients/client"
 )
 
 const grpcDefaultTimeout = 5 * time.Second
@@ -27,13 +28,13 @@ const grpcDefaultTimeout = 5 * time.Second
 type grpcClient struct {
 	address   string
 	chainHash []byte
-	client    drand.PublicClient
+	client    proto.PublicClient
 	conn      *grpc.ClientConn
 	l         log.Logger
 }
 
 // New creates a drand client backed by a GRPC connection.
-func New(address string, insecure bool, chainHash []byte) (client.Client, error) {
+func New(address string, insecure bool, chainHash []byte) (drand.Client, error) {
 	var opts []grpc.DialOption
 	if insecure {
 		opts = append(opts, grpc.WithTransportCredentials(grpcInsec.NewCredentials()))
@@ -49,11 +50,11 @@ func New(address string, insecure bool, chainHash []byte) (client.Client, error)
 		return nil, err
 	}
 
-	return &grpcClient{address, chainHash, drand.NewPublicClient(conn), conn, log.DefaultLogger()}, nil
+	return &grpcClient{address, chainHash, proto.NewPublicClient(conn), conn, log.DefaultLogger()}, nil
 }
 
-func asRD(r *drand.PublicRandResponse) *localClient.RandomData {
-	return &localClient.RandomData{
+func asRD(r *proto.PublicRandResponse) *client.RandomData {
+	return &client.RandomData{
 		Rnd:               r.GetRound(),
 		Random:            crypto.RandomnessFromSignature(r.GetSignature()),
 		Sig:               r.GetSignature(),
@@ -67,8 +68,8 @@ func (g *grpcClient) String() string {
 }
 
 // Get returns a the randomness at `round` or an error.
-func (g *grpcClient) Get(ctx context.Context, round uint64) (client.Result, error) {
-	curr, err := g.client.PublicRand(ctx, &drand.PublicRandRequest{Round: round, Metadata: g.getMetadata()})
+func (g *grpcClient) Get(ctx context.Context, round uint64) (drand.Result, error) {
+	curr, err := g.client.PublicRand(ctx, &proto.PublicRandRequest{Round: round, Metadata: g.getMetadata()})
 	if err != nil {
 		return nil, err
 	}
@@ -80,9 +81,9 @@ func (g *grpcClient) Get(ctx context.Context, round uint64) (client.Result, erro
 }
 
 // Watch returns new randomness as it becomes available.
-func (g *grpcClient) Watch(ctx context.Context) <-chan client.Result {
-	stream, err := g.client.PublicRandStream(ctx, &drand.PublicRandRequest{Round: 0, Metadata: g.getMetadata()})
-	ch := make(chan client.Result, 1)
+func (g *grpcClient) Watch(ctx context.Context) <-chan drand.Result {
+	stream, err := g.client.PublicRandStream(ctx, &proto.PublicRandRequest{Round: 0, Metadata: g.getMetadata()})
+	ch := make(chan drand.Result, 1)
 	if err != nil {
 		close(ch)
 		return ch
@@ -93,17 +94,17 @@ func (g *grpcClient) Watch(ctx context.Context) <-chan client.Result {
 
 // Info returns information about the chain.
 func (g *grpcClient) Info(ctx context.Context) (*chain.Info, error) {
-	proto, err := g.client.ChainInfo(ctx, &drand.ChainInfoRequest{Metadata: g.getMetadata()})
+	p, err := g.client.ChainInfo(ctx, &proto.ChainInfoRequest{Metadata: g.getMetadata()})
 	if err != nil {
 		return nil, err
 	}
-	if proto == nil {
+	if p == nil {
 		return nil, errors.New("no received group - unexpected gPRC response")
 	}
-	return chain.InfoFromProto(proto)
+	return chain.InfoFromProto(p)
 }
 
-func (g *grpcClient) translate(stream drand.Public_PublicRandStreamClient, out chan<- client.Result) {
+func (g *grpcClient) translate(stream proto.Public_PublicRandStreamClient, out chan<- drand.Result) {
 	defer close(out)
 	for {
 		next, err := stream.Recv()
@@ -117,19 +118,19 @@ func (g *grpcClient) translate(stream drand.Public_PublicRandStreamClient, out c
 	}
 }
 
-func (g *grpcClient) getMetadata() *drand.Metadata {
-	return &drand.Metadata{ChainHash: g.chainHash}
+func (g *grpcClient) getMetadata() *proto.Metadata {
+	return &proto.Metadata{ChainHash: g.chainHash}
 }
 
 func (g *grpcClient) RoundAt(t time.Time) uint64 {
 	ctx, cancel := context.WithTimeout(context.Background(), grpcDefaultTimeout)
 	defer cancel()
 
-	info, err := g.client.ChainInfo(ctx, &drand.ChainInfoRequest{Metadata: g.getMetadata()})
+	info, err := g.client.ChainInfo(ctx, &proto.ChainInfoRequest{Metadata: g.getMetadata()})
 	if err != nil {
 		return 0
 	}
-	return commonutils.CurrentRound(t.Unix(), time.Second*time.Duration(info.Period), info.GenesisTime)
+	return commonutils.CurrentRound(t.Unix(), time.Second*time.Duration(info.GetPeriod()), info.GetGenesisTime())
 }
 
 // SetLog configures the client log output

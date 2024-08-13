@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/drand/go-clients/drand"
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 
-	commonutils "github.com/drand/drand/v2/common"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
 	"github.com/drand/go-clients/client"
@@ -144,7 +144,7 @@ func TestClientLibChainHashOverrideError(t *testing.T) {
 		"--hash",
 		fakeChainHash,
 	})
-	if !errors.Is(err, commonutils.ErrInvalidChainHash) {
+	if !errors.Is(err, drand.ErrInvalidChainHash) {
 		t.Log(fakeChainHash)
 		t.Fatal("expected error from mismatched chain hashes. Got: ", err)
 	}
@@ -155,5 +155,5 @@ func groupTOMLPath() string {
 	if !ok {
 		return ""
 	}
-	return filepath.Join(filepath.Dir(file), "..", "..", "internal", "test", "default.toml")
+	return filepath.Join(filepath.Dir(file), "..", "..", "internal", "testdata", "default.toml")
 }
