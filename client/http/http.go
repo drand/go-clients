@@ -59,7 +59,7 @@ func New(ctx context.Context, l log.Logger, url string, chainHash []byte, transp
 	if err != nil {
 		pn = defaultClientExec
 	}
-	agent := fmt.Sprintf("drand-client-%s/1.0", path.Base(pn))
+	agent := fmt.Sprintf("go-client-%s/2.0", path.Base(pn))
 	c := &httpClient{
 		root:   url,
 		client: createClient(transport),
@@ -320,8 +320,12 @@ func (h *httpClient) Get(ctx context.Context, round uint64) (drand.Result, error
 		req.Header.Set("User-Agent", h.Agent)
 
 		randResponse, err := h.client.Do(req)
-		if err != nil || randResponse.StatusCode != nhttp.StatusOK {
-			resC <- httpGetResponse{nil, fmt.Errorf("doing request %v: %w", req, err)}
+		if err != nil {
+			resC <- httpGetResponse{nil, fmt.Errorf("error doing GET request to %q: %w", url, err)}
+			return
+		}
+		if randResponse.StatusCode != nhttp.StatusOK {
+			resC <- httpGetResponse{nil, fmt.Errorf("got invalid status %d doing GET request to %q", randResponse.StatusCode, url)}
 			return
 		}
 		defer randResponse.Body.Close()
