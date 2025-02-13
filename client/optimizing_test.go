@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -81,6 +82,7 @@ func TestOptimizingGet(t *testing.T) {
 
 	waitForSpeedTest(t, oc, 10*time.Second)
 
+	oc.Get(context.Background(), 0)
 	// speed test will consume round 0 and 5 from c0 and c1
 	// then c1 will be used because it's faster
 	expectRound(t, latestResult(t, oc), 6) // round 6 from c1 and round 1 from c0 (discarded)
@@ -314,4 +316,24 @@ func TestOptimizingClose(t *testing.T) {
 	}
 
 	wg.Wait() // wait for underlying clients to close
+}
+
+func TestOptimizingGetWithEmpty(t *testing.T) {
+	lg := log.New(nil, log.DebugLevel, true)
+	oc, err := newOptimizingClient(lg, []drand.Client{EmptyClientWithInfo(nil)}, time.Second*5, 2, time.Minute*5, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	oc.Start()
+	defer closeClient(t, oc)
+
+	waitForSpeedTest(t, oc, 10*time.Second)
+
+	res, err := oc.Get(context.Background(), 0)
+	if !errors.Is(err, drand.ErrEmptyClientUnsupportedGet) {
+		t.Fatal(err)
+	}
+	if res != nil {
+		t.Fatal("expected nil result")
+	}
 }

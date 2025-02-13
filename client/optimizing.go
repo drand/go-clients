@@ -194,7 +194,7 @@ func (oc *optimizingClient) testSpeed() {
 					cancel()
 					break LOOP
 				}
-				if rr.err != nil {
+				if rr.err != nil && !errors.Is(rr.err, drand.ErrEmptyClientUnsupportedGet) {
 					oc.log.Infow("", "optimizing_client", "endpoint down when speed tested", "client", fmt.Sprintf("%s", rr.client), "err", rr.err)
 				}
 				stats = append(stats, rr.stat)
