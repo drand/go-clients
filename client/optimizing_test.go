@@ -82,7 +82,6 @@ func TestOptimizingGet(t *testing.T) {
 
 	waitForSpeedTest(t, oc, 10*time.Second)
 
-	oc.Get(context.Background(), 0)
 	// speed test will consume round 0 and 5 from c0 and c1
 	// then c1 will be used because it's faster
 	expectRound(t, latestResult(t, oc), 6) // round 6 from c1 and round 1 from c0 (discarded)
