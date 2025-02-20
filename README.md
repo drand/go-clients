@@ -5,6 +5,22 @@ This repo contains most notably:
  - a client CLI tool to fetch and verify drand beacons from the various available sources in your terminal
  - a gossipsub relay to relay drand beacons on gossipsub
 
+# Install
+
+```sh
+git clone https://github.com/drand/go-clients.git
+cd go-clients
+make build
+```
+
+# Usage
+
+Run `./drand-cli --help` for a list of supported options.
+
+```sh
+./drand-cli get chain-info --url https://api.drand.sh --insecure
+```
+
 # Migration from drand/drand
 
 Prior to drand V2 release, the drand client code lived in the drand/drand repo. Since its V2 release, the drand daemon code aims at being more minimalist and having as few dependencies as possible.
