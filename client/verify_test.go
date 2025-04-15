@@ -16,7 +16,7 @@ import (
 	"github.com/drand/go-clients/client/test/result/mock"
 )
 
-func mockClientWithVerifiableResults(ctx context.Context, t *testing.T, l log.Logger, n int, strictRounds bool) (drand.Client, []mock.Result) {
+func mockClientWithVerifiableResults(_ context.Context, t *testing.T, _ log.Logger, n int, strictRounds bool) (drand.Client, []mock.Result) {
 	t.Helper()
 	sch, err := crypto.GetSchemeFromEnv()
 	require.NoError(t, err)

@@ -181,7 +181,7 @@ func TestHTTPClientTestFunc(t *testing.T) {
 	drain(t, ch, 5*time.Second)
 }
 
-func newTestClient(t *testing.T, relayMultiaddr []ma.Multiaddr, info *chain.Info, clk clock.Clock) (*Client, error) {
+func newTestClient(t *testing.T, relayMultiaddr []ma.Multiaddr, info *chain.Info, _ clock.Clock) (*Client, error) {
 	identityDir := t.TempDir()
 
 	lg := log.New(nil, log.DebugLevel, true)
