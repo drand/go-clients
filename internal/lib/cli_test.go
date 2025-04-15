@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/drand/go-clients/drand"
 	clock "github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
+
+	"github.com/drand/go-clients/drand"
 
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"

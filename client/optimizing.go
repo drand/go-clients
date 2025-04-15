@@ -332,7 +332,6 @@ func parallelGet(ctx context.Context, clients []drand.Client, round uint64, time
 		wg := sync.WaitGroup{}
 	LOOP:
 		for _, c := range clients {
-			c := c
 			select {
 			case <-token:
 				wg.Add(1)
@@ -428,7 +427,6 @@ func (oc *optimizingClient) Watch(ctx context.Context) <-chan drand.Result {
 
 	closingClients := make(chan drand.Client, 1)
 	for _, c := range oc.passiveClients {
-		c := c
 		go state.watchNext(ctx, c, inChan, closingClients)
 		state.protected = append(state.protected, watchingClient{c, nil})
 	}
