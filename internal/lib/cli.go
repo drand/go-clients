@@ -3,6 +3,7 @@ package lib
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -372,6 +373,10 @@ func chainInfoFromChainInfoJSON(filePath string) (*chainCommon.Info, error) {
 	b, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
+	}
+	info := new(chainCommon.Info)
+	if err := json.Unmarshal(b, info); err == nil {
+		return info, nil
 	}
 	return chainCommon.InfoFromJSON(bytes.NewBuffer(b))
 }
