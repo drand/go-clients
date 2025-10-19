@@ -14,6 +14,7 @@ import (
 	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
+	"github.com/drand/go-clients/internal/metrics"
 )
 
 const ClientStartupTimeout = time.Second * 5
@@ -89,6 +90,12 @@ func makeClient(cfg *clientConfig) (drand.Client, error) {
 			return nil, err
 		}
 		cfg.clients = append(cfg.clients, wc)
+	}
+
+	// bind prometheus metrics if a registerer was provided
+	if cfg.prometheus != nil {
+		// ignore registration errors; caller may re-use registries across clients
+		_ = metrics.RegisterClientMetrics(cfg.prometheus)
 	}
 
 	for _, c := range cfg.clients {
