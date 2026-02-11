@@ -84,7 +84,7 @@ func TestGRPCClientTestFunc(t *testing.T) {
 	mockService := svc.(mock.Service)
 	// pub sub polls every 200ms
 	wait := 250 * time.Millisecond
-	for i := uint64(0); i < 3; i++ {
+	for i := range uint64(3) {
 		time.Sleep(wait)
 		mockService.EmitRand(false)
 		t.Logf("round %d emitted\n", baseRound+i)
@@ -161,7 +161,7 @@ func TestHTTPClientTestFunc(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	emit(false)
 	ch := c.Watch(ctx)
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		// pub sub polls every 200ms, but the other http one polls every period
 		time.Sleep(1250 * time.Millisecond)
 		emit(false)

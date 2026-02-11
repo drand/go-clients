@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -165,12 +166,7 @@ type requestResult struct {
 
 // markedPassive checks if a client should be treated as passive
 func (oc *optimizingClient) markedPassive(c drand.Client) bool {
-	for _, p := range oc.passiveClients {
-		if p == c {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(oc.passiveClients, c)
 }
 
 func (oc *optimizingClient) testSpeed() {
@@ -324,7 +320,7 @@ func parallelGet(ctx context.Context, clients []drand.Client, round uint64, time
 	results := make(chan *requestResult, len(clients))
 	token := make(chan struct{}, concurrency)
 
-	for i := 0; i < concurrency; i++ {
+	for range concurrency {
 		token <- struct{}{}
 	}
 

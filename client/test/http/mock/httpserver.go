@@ -38,7 +38,7 @@ func NewMockHTTPPublicServer(t *testing.T, badSecondRound bool, sch *crypto.Sche
 	}
 
 	var chainInfo *chain.Info
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		protoInfo, err := server.ChainInfo(ctx, &proto.ChainInfoRequest{})
 		if err != nil {
 			t.Error("MockServer.ChainInfo error:", err)
@@ -211,10 +211,10 @@ func (s *streamProxy) SetTrailer(metadata.MD) {}
 func (s *streamProxy) Context() context.Context {
 	return peer.NewContext(s.ctx, &peer.Peer{Addr: &net.UnixAddr{}})
 }
-func (s *streamProxy) SendMsg(_ interface{}) error {
+func (s *streamProxy) SendMsg(_ any) error {
 	return nil
 }
-func (s *streamProxy) RecvMsg(_ interface{}) error {
+func (s *streamProxy) RecvMsg(_ any) error {
 	return nil
 }
 

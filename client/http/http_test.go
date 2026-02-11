@@ -189,12 +189,10 @@ func TestHTTPClientClose(t *testing.T) {
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		for range httpClient.Watch(context.Background()) {
 		}
-		wg.Done()
-	}()
+	})
 
 	err = httpClient.Close()
 	if err != nil {

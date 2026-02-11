@@ -91,12 +91,10 @@ func TestClientClose(t *testing.T) {
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		for range c.Watch(context.Background()) {
 		}
-		wg.Done()
-	}()
+	})
 
 	err = c.Close()
 	if err != nil {
