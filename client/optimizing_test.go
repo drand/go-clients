@@ -91,8 +91,7 @@ func TestOptimizingGet(t *testing.T) {
 }
 
 func TestOptimizingWatch(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	c0 := clientMock.ClientWithResults(0, 5)
 	c1 := clientMock.ClientWithResults(5, 8)
@@ -128,8 +127,7 @@ func TestOptimizingWatch(t *testing.T) {
 }
 
 func TestOptimizingWatchRetryOnClose(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	var rnd uint64
 	c := &clientMock.Client{
@@ -171,8 +169,7 @@ func TestOptimizingWatchRetryOnClose(t *testing.T) {
 }
 
 func TestOptimizingWatchFailover(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	chainInfo := fakeChainInfo(t)
 
 	var rndlk sync.Mutex

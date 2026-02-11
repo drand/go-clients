@@ -204,7 +204,7 @@ func TestClientWithWatcher(t *testing.T) {
 
 	w := c.Watch(ctx)
 
-	for i := 0; i < len(results); i++ {
+	for i := range results {
 		r := <-w
 		compareResults(t, &results[i], r)
 	}
@@ -327,7 +327,7 @@ func TestClientAutoWatchRetry(t *testing.T) {
 	// Returns a channel that yields the verifiable results above
 	watchF := func(ctx context.Context) <-chan drand.Result {
 		go func() {
-			for i := 0; i < len(results); i++ {
+			for i := range results {
 				select {
 				case resC <- &results[i]:
 				case <-ctx.Done():
