@@ -12,7 +12,7 @@ import (
 
 var chainHash = "8990e7a9aaed2ffed73dbd7092123d6f289930540d7651336225dc172e51b2ce"
 
-func Example_BasicUsage() {
+func ExampleNewSimpleClient() {
 	lg := log.New(nil, log.DebugLevel, true)
 
 	httpClient, err := http.NewSimpleClient("http://api.drand.sh/", chainHash)
