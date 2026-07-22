@@ -28,6 +28,21 @@ var _ drandi.LoggingClient = &Client{}
 // to be dropped by the library when using Client.Watch
 var WatchBufferSize = 100
 
+// subscription is a registered notification channel. Both the unsubscribe
+// function returned by Sub and the shutdown of the background goroutine can
+// retire a subscription, so the channel is closed through a sync.Once to make
+// closing idempotent rather than a panic.
+type subscription struct {
+	ch   chan drand.PublicRandResponse
+	once sync.Once
+}
+
+// close closes the notification channel. It is safe to call more than once and
+// from multiple goroutines.
+func (s *subscription) close() {
+	s.once.Do(func() { close(s.ch) })
+}
+
 // Client is a concrete pubsub client implementation
 type Client struct {
 	cancel func()
@@ -37,7 +52,7 @@ type Client struct {
 
 	subs struct {
 		sync.Mutex
-		M map[*int]chan drand.PublicRandResponse
+		M map[*int]*subscription
 	}
 }
 
@@ -99,15 +114,26 @@ func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache clie
 	t, err := ps.Join(topic)
 	if err != nil {
 		cancel()
+		// the validator is registered per topic and rejects re-registration, so
+		// it has to be removed again or this topic can never be joined.
+		if uerr := ps.UnregisterTopicValidator(topic); uerr != nil {
+			l.Errorw("unregistering topic validator", "err", uerr)
+		}
 		return nil, fmt.Errorf("joining pubsub: %w", err)
 	}
 	s, err := t.Subscribe()
 	if err != nil {
 		cancel()
+		if uerr := ps.UnregisterTopicValidator(topic); uerr != nil {
+			l.Errorw("unregistering topic validator", "err", uerr)
+		}
+		if cerr := t.Close(); cerr != nil {
+			l.Errorw("closing topic", "err", cerr)
+		}
 		return nil, fmt.Errorf("subscribe: %w", err)
 	}
 
-	c.subs.M = make(map[*int]chan drand.PublicRandResponse)
+	c.subs.M = make(map[*int]*subscription)
 
 	go func() {
 		for {
@@ -120,12 +146,18 @@ func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache clie
 				if err != nil {
 					c.log.Errorw("NewPubSub closing goroutine for topic", "err", err)
 				}
+				// without this the topic keeps a validator registered for the
+				// lifetime of the pubsub instance, so a later client for the
+				// same chain hash could not be created.
+				if err := ps.UnregisterTopicValidator(topic); err != nil {
+					c.log.Errorw("NewPubSub unregistering topic validator", "err", err)
+				}
 
 				c.subs.Lock()
-				for _, ch := range c.subs.M {
-					close(ch)
+				for _, sub := range c.subs.M {
+					sub.close()
 				}
-				c.subs.M = make(map[*int]chan drand.PublicRandResponse)
+				c.subs.M = make(map[*int]*subscription)
 				c.subs.Unlock()
 				return
 			}
@@ -155,9 +187,9 @@ func NewWithPubsub(l log.Logger, ps *pubsub.PubSub, info *chain.Info, cache clie
 
 			c.log.Debugw("newPubSub broadcasting round to listeners", "round", rand.Round)
 			c.subs.Lock()
-			for _, ch := range c.subs.M {
+			for _, sub := range c.subs.M {
 				select {
-				case ch <- rand:
+				case sub.ch <- rand:
 				default:
 					c.log.Warnw("", "gossip client", "randomness notification dropped due to a full channel")
 				}
@@ -183,14 +215,15 @@ type UnsubFunc func()
 // Notification channels will be closed when the client is Closed
 func (c *Client) Sub(ch chan drand.PublicRandResponse) UnsubFunc {
 	id := new(int)
+	sub := &subscription{ch: ch}
 	c.subs.Lock()
-	c.subs.M[id] = ch
+	c.subs.M[id] = sub
 	c.subs.Unlock()
 	return func() {
 		c.log.Debugw("closing sub")
 		c.subs.Lock()
 		delete(c.subs.M, id)
-		close(ch)
+		sub.close()
 		c.subs.Unlock()
 	}
 }
@@ -264,6 +297,7 @@ func NewPubsub(ctx context.Context, listenAddr string, relayAddrs []string) (*pu
 		// resolve the relay multiaddr to peers' AddrInfo
 		mas, err := dnsaddr.Resolve(ctx, multiaddr.StringCast(relayAddr))
 		if err != nil {
+			h.Close()
 			return nil, nil, fmt.Errorf("dnsaddr.Resolve error: %w", err)
 		}
 		for _, ma := range mas {
@@ -277,5 +311,9 @@ func NewPubsub(ctx context.Context, listenAddr string, relayAddrs []string) (*pu
 	}
 
 	ps, err := pubsub.NewGossipSub(ctx, h, pubsub.WithDirectPeers(peers))
-	return ps, h, err
+	if err != nil {
+		h.Close()
+		return nil, nil, err
+	}
+	return ps, h, nil
 }
