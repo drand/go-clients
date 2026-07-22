@@ -46,7 +46,7 @@ var appCommands = []*cli.Command{
 				ArgsUsage: "--url url1 --url url2 ... uses the first working relay",
 				Flags: toArray(lib.URLFlag, lib.JSONFlag, lib.InsecureFlag, lib.HashFlag,
 					lib.HashListFlag, lib.GroupConfFlag, lib.VerboseFlag),
-				Action:    getChainInfo,
+				Action: getChainInfo,
 			},
 		},
 	},
