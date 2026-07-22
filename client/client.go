@@ -81,6 +81,16 @@ func makeClient(cfg *clientConfig) (drand.Client, error) {
 		return nil, err
 	}
 
+	// tryPopulateInfo adopts whatever the first responding client advertises, so
+	// the configured chain hash has to be enforced against it here. The bundled
+	// HTTP client already checks this itself, but a custom drand.Client would
+	// otherwise get to choose the public key every verifier is then handed.
+	if cfg.chainHash != nil && cfg.chainInfo != nil && !bytes.Equal(cfg.chainInfo.Hash(), cfg.chainHash) {
+		l.Errorw("chain hash mismatch", "expected", cfg.chainHash, "got", cfg.chainInfo.Hash())
+		return nil, fmt.Errorf("%w: expected %x, chain info advertises %x",
+			drand.ErrInvalidChainHash, cfg.chainHash, cfg.chainInfo.Hash())
+	}
+
 	// provision watcher client
 	var wc drand.Client
 	if cfg.watcher != nil {
