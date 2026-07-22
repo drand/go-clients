@@ -416,7 +416,21 @@ func chainInfoFromGroupTOML(filePath string) (*chainCommon.Info, error) {
 	if err != nil {
 		return nil, err
 	}
+	// FromTOML accepts a group without a distributed public key, e.g. a group
+	// proposal that has not gone through a DKG yet. NewChainInfo dereferences it
+	// unconditionally, so without this guard such a file panics instead of
+	// reporting a decode error.
+	if g.PublicKey == nil {
+		return nil, fmt.Errorf("group file %q has no distributed public key", filePath)
+	}
 	return chainCommon.NewChainInfo(g), nil
+}
+
+// usableChainInfo reports whether a decode produced something that can actually
+// serve as a root of trust, rather than a zero-valued struct that happens to
+// have unmarshalled without error.
+func usableChainInfo(i *chainCommon.Info) bool {
+	return i != nil && i.PublicKey != nil && i.Scheme != ""
 }
 
 func chainInfoFromChainInfoJSON(filePath string) (*chainCommon.Info, error) {
@@ -424,9 +438,25 @@ func chainInfoFromChainInfoJSON(filePath string) (*chainCommon.Info, error) {
 	if err != nil {
 		return nil, err
 	}
-	info := new(chainCommon.Info)
-	if err := json.Unmarshal(b, info); err == nil {
+
+	// The packet encoding is what relays serve from /info and what Info.ToJSON
+	// writes, so it is tried first. The plain struct encoding shares some field
+	// names with it but reads others differently ("group_hash" vs "groupHash",
+	// no "metadata"), so decoding a packet-form file as a struct succeeds while
+	// silently yielding an empty scheme and genesis seed -- and therefore the
+	// wrong chain hash -- rather than falling through to the correct decoder.
+	info, protoErr := chainCommon.InfoFromJSON(bytes.NewBuffer(b))
+	if protoErr == nil && usableChainInfo(info) {
 		return info, nil
 	}
-	return chainCommon.InfoFromJSON(bytes.NewBuffer(b))
+
+	structInfo := new(chainCommon.Info)
+	if structErr := json.Unmarshal(b, structInfo); structErr == nil && usableChainInfo(structInfo) {
+		return structInfo, nil
+	}
+
+	if protoErr != nil {
+		return nil, protoErr
+	}
+	return nil, fmt.Errorf("could not decode %q as drand chain info", filePath)
 }

@@ -198,3 +198,24 @@ func TestClientLibGroupConfListFlag(t *testing.T) {
 	args := []string{"mock-client", "--relay", fakeGossipRelayAddr, "--group-conf-list", groupTOMLPath()}
 	require.NoError(t, run(lg, args), "--group-conf-list should be honoured")
 }
+
+// TestChainInfoFromGroupTOMLWithoutPublicKey ensures a group file that has no
+// distributed public key -- a group proposal that never went through a DKG --
+// is reported as a decode error. NewChainInfo dereferences the key
+// unconditionally, so this used to panic with a nil pointer dereference.
+func TestChainInfoFromGroupTOMLWithoutPublicKey(t *testing.T) {
+	src, err := os.ReadFile(groupTOMLPath())
+	require.NoError(t, err)
+
+	// drop the [PublicKey] section and everything after it
+	idx := bytes.Index(src, []byte("[PublicKey]"))
+	require.Positive(t, idx, "test fixture should contain a [PublicKey] section")
+
+	path := filepath.Join(t.TempDir(), "nokey.toml")
+	require.NoError(t, os.WriteFile(path, src[:idx], 0o600))
+
+	require.NotPanics(t, func() {
+		_, err := chainInfoFromGroupTOML(path)
+		require.Error(t, err, "a group without a public key should not decode")
+	})
+}
