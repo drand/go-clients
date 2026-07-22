@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/drand/drand/v2/crypto"
@@ -154,6 +155,11 @@ func Ping(ctx context.Context, root string) error {
 
 	defer response.Body.Close()
 
+	// NOTE: the status code is deliberately not checked here. A relay serves
+	// /health with a non-2xx status until it has seen its first beacon, so
+	// treating that as failure would turn Ping into a "has produced randomness"
+	// check rather than a reachability one.
+
 	return nil
 }
 
@@ -171,6 +177,10 @@ func createClient(transport nhttp.RoundTripper) *nhttp.Client {
 func IsServerReady(ctx context.Context, addr string) error {
 	counter := 0
 	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		// Ping is wrapping its context with a Timeout on maxTimeoutHTTPRequest anyway.
 		err := Ping(ctx, "http://"+addr)
 		if err == nil {
@@ -182,7 +192,13 @@ func IsServerReady(ctx context.Context, addr string) error {
 			return fmt.Errorf("timeout waiting http server to be ready")
 		}
 
-		time.Sleep(httpWaitInterval)
+		// stop waiting as soon as the caller gives up rather than burning the
+		// full retry budget on a cancelled context.
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(httpWaitInterval):
+		}
 	}
 }
 
@@ -194,6 +210,7 @@ type httpClient struct {
 	chainInfo *chain2.Info
 	l         log.Logger
 	done      chan struct{}
+	closeOnce sync.Once
 }
 
 // SetLog configures the client log output
@@ -254,6 +271,14 @@ func (h *httpClient) FetchChainInfo(ctx context.Context, chainHash []byte) (*cha
 			return
 		}
 		defer infoBody.Body.Close()
+
+		// without this an error page is fed straight into the JSON decoder and
+		// surfaces as an unintelligible decoding failure rather than the actual
+		// HTTP status.
+		if infoBody.StatusCode != nhttp.StatusOK {
+			resC <- httpInfoResponse{nil, fmt.Errorf("got invalid status %d doing GET request to %q", infoBody.StatusCode, url)}
+			return
+		}
 
 		chainInfo, err := chain2.InfoFromJSON(infoBody.Body)
 		if err != nil {
@@ -324,11 +349,15 @@ func (h *httpClient) Get(ctx context.Context, round uint64) (drand.Result, error
 			resC <- httpGetResponse{nil, fmt.Errorf("error doing GET request to %q: %w", url, err)}
 			return
 		}
+		// the body has to be closed on every path, including the non-200 one:
+		// asking for a round that has not been produced yet legitimately 404s,
+		// and leaking it there bleeds a connection per failed request.
+		defer randResponse.Body.Close()
+
 		if randResponse.StatusCode != nhttp.StatusOK {
 			resC <- httpGetResponse{nil, fmt.Errorf("got invalid status %d doing GET request to %q", randResponse.StatusCode, url)}
 			return
 		}
-		defer randResponse.Body.Close()
 
 		randResp := client.RandomData{}
 		if err := json.NewDecoder(randResponse.Body).Decode(&randResp); err != nil {
@@ -392,8 +421,12 @@ func (h *httpClient) RoundAt(t time.Time) uint64 {
 	return common.CurrentRound(t.Unix(), h.chainInfo.Period, h.chainInfo.GenesisTime)
 }
 
+// Close is safe to call more than once: the same client can be wrapped by
+// several layers that each forward Close, and closing h.done twice panics.
 func (h *httpClient) Close() error {
-	close(h.done)
-	h.client.CloseIdleConnections()
+	h.closeOnce.Do(func() {
+		close(h.done)
+		h.client.CloseIdleConnections()
+	})
 	return nil
 }

@@ -53,6 +53,10 @@ func (c *HealthMetrics) startObserve(ctx context.Context) {
 		result, err := c.clients[n].Get(ctx, c.clients[n].RoundAt(time.Now())+1)
 		if err != nil {
 			metrics.ClientHTTPHeartbeatFailure.With(prometheus.Labels{"http_address": httpClient.root}).Inc()
+			// advance regardless: staying on a failing client would pin the
+			// round-robin to it and stop measuring every other relay, which is
+			// exactly the situation this heartbeat exists to surface.
+			c.next++
 			continue
 		}
 
