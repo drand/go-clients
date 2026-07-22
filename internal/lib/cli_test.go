@@ -158,3 +158,43 @@ func groupTOMLPath() string {
 	}
 	return filepath.Join(filepath.Dir(file), "..", "..", "internal", "testdata", "default.toml")
 }
+
+// TestClientLibHashListFlag covers --hash-list being honoured as a root of
+// trust. It is registered on the client commands, but Create used to read only
+// --hash, so passing it left the client with no root of trust at all.
+func TestClientLibHashListFlag(t *testing.T) {
+	opts = []client.Option{}
+	lg := log.New(nil, log.DebugLevel, true)
+
+	sch, err := crypto.GetSchemeFromEnv()
+	require.NoError(t, err)
+	clk := clock.NewFakeClockAt(time.Now())
+	addr, info, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	defer cancel()
+
+	// the correct hash is accepted and serves as the root of trust
+	args := []string{"mock-client", "--url", "http://" + addr, "--hash-list", hex.EncodeToString(info.Hash())}
+	require.NoError(t, run(lg, args), "--hash-list should pin the chain")
+
+	// a mismatching hash is rejected rather than silently ignored
+	args = []string{"mock-client", "--url", "http://" + addr, "--hash-list", hex.EncodeToString(make([]byte, 32))}
+	require.Error(t, run(lg, args), "--hash-list should reject a chain hash mismatch")
+
+	// a client follows a single chain, so several hashes are ambiguous
+	args = []string{
+		"mock-client", "--url", "http://" + addr,
+		"--hash-list", hex.EncodeToString(info.Hash()),
+		"--hash-list", hex.EncodeToString(make([]byte, 32)),
+	}
+	require.Error(t, run(lg, args), "several chain hashes should be refused")
+}
+
+// TestClientLibGroupConfListFlag covers the same silent-drop for
+// --group-conf-list on the client path.
+func TestClientLibGroupConfListFlag(t *testing.T) {
+	opts = []client.Option{}
+	lg := log.New(nil, log.DebugLevel, true)
+
+	args := []string{"mock-client", "--relay", fakeGossipRelayAddr, "--group-conf-list", groupTOMLPath()}
+	require.NoError(t, run(lg, args), "--group-conf-list should be honoured")
+}

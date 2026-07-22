@@ -35,7 +35,8 @@ var appCommands = []*cli.Command{
 				Usage: "Get the latest public randomness from the drand " +
 					"relay and verify it against the collective public key " +
 					"as specified in the chain-info.\n",
-				Flags:     toArray(lib.URLFlag, lib.JSONFlag, lib.InsecureFlag, lib.HashListFlag, lib.VerboseFlag),
+				Flags: toArray(lib.URLFlag, lib.JSONFlag, lib.InsecureFlag, lib.HashFlag,
+					lib.HashListFlag, lib.GroupConfFlag, lib.VerboseFlag),
 				ArgsUsage: "--url url1 --url url2 ROUND... uses the first working relay to query round number ROUND",
 				Action:    getPublicRandomness,
 			},
@@ -43,7 +44,8 @@ var appCommands = []*cli.Command{
 				Name:      "chain-info",
 				Usage:     "Get beacon information",
 				ArgsUsage: "--url url1 --url url2 ... uses the first working relay",
-				Flags:     toArray(lib.URLFlag, lib.JSONFlag, lib.InsecureFlag, lib.HashListFlag, lib.VerboseFlag),
+				Flags: toArray(lib.URLFlag, lib.JSONFlag, lib.InsecureFlag, lib.HashFlag,
+					lib.HashListFlag, lib.GroupConfFlag, lib.VerboseFlag),
 				Action:    getChainInfo,
 			},
 		},

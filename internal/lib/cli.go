@@ -129,7 +129,11 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	var info *chainCommon.Info
 	var err error
 	var hash []byte
-	if groupPath := c.Path(GroupConfFlag.Name); groupPath != "" {
+	groupPath, err := groupConfPath(c)
+	if err != nil {
+		return nil, err
+	}
+	if groupPath != "" {
 		l.Debugw("parsing group-conf file")
 		info, err = chainInfoFromGroupTOML(groupPath)
 		if err != nil {
@@ -157,8 +161,12 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	}
 	l.Debugw("built GRPC Client", "successful", len(grc))
 
-	if c.String(HashFlag.Name) != "" {
-		hash, err = hex.DecodeString(c.String(HashFlag.Name))
+	hashFlag, err := chainHash(c)
+	if err != nil {
+		return nil, err
+	}
+	if hashFlag != "" {
+		hash, err = hex.DecodeString(hashFlag)
 		if err != nil {
 			return nil, err
 		}
@@ -167,7 +175,7 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 				"%w for beacon %s %v != %v",
 				drand.ErrInvalidChainHash,
 				info.ID,
-				c.String(HashFlag.Name),
+				hashFlag,
 				hex.EncodeToString(info.Hash()),
 			)
 		}
@@ -206,16 +214,58 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	return client.Wrap(clients, opts...)
 }
 
+// chainHash returns the chain hash the client should be pinned to, accepting
+// either the singular HashFlag or a single-valued HashListFlag. The list form
+// exists for the relay, which follows several chains at once, but it is also
+// registered on the client commands, so it has to be honoured here or the flag
+// silently provides no verification at all.
+func chainHash(c *cli.Context) (string, error) {
+	if h := c.String(HashFlag.Name); h != "" {
+		return h, nil
+	}
+	hashes := c.StringSlice(HashListFlag.Name)
+	switch len(hashes) {
+	case 0:
+		return "", nil
+	case 1:
+		return hashes[0], nil
+	default:
+		return "", fmt.Errorf("a client follows a single chain: --%s expects one hash, got %d",
+			HashListFlag.Name, len(hashes))
+	}
+}
+
+// groupConfPath returns the group configuration path, accepting either the
+// singular GroupConfFlag or a single-valued GroupConfListFlag, for the same
+// reason as chainHash.
+func groupConfPath(c *cli.Context) (string, error) {
+	if p := c.Path(GroupConfFlag.Name); p != "" {
+		return p, nil
+	}
+	paths := c.StringSlice(GroupConfListFlag.Name)
+	switch len(paths) {
+	case 0:
+		return "", nil
+	case 1:
+		return paths[0], nil
+	default:
+		return "", fmt.Errorf("a client follows a single chain: --%s expects one path, got %d",
+			GroupConfListFlag.Name, len(paths))
+	}
+}
+
 func buildGrpcClient(c *cli.Context, info *chainCommon.Info) ([]drand.Client, *chainCommon.Info, error) {
 	if !c.IsSet(GRPCConnectFlag.Name) {
 		return nil, info, nil
 	}
 
 	var hash []byte
-	if c.IsSet(HashFlag.Name) {
-		var err error
-
-		hash, err = hex.DecodeString(c.String(HashFlag.Name))
+	hashFlag, err := chainHash(c)
+	if err != nil {
+		return nil, nil, err
+	}
+	if hashFlag != "" {
+		hash, err = hex.DecodeString(hashFlag)
 		if err != nil {
 			return nil, nil, err
 		}
