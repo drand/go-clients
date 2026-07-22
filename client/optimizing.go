@@ -80,9 +80,16 @@ func newOptimizingClient(
 		return nil, errors.New("missing clients")
 	}
 	stats := make([]*requestStat, len(clients))
-	now := time.Now()
 	for i, c := range clients {
-		stats[i] = &requestStat{client: c, rtt: 0, startTime: now}
+		// startTime is left as the zero time on purpose: no request has been
+		// made for this client yet, so there is nothing for a later sample to
+		// be compared against. Seeding it with time.Now() meant the first real
+		// sample was only accepted if its start time happened to read later
+		// than the construction time, and any backwards step of the monotonic
+		// clock -- which does occur on some virtualised hosts -- discarded it.
+		// The client then kept rtt == 0 forever, so it both sorted ahead of
+		// every measured client and never counted as speed tested.
+		stats[i] = &requestStat{client: c, rtt: 0}
 	}
 	done := make(chan struct{})
 	if requestTimeout <= 0 {
@@ -358,9 +365,14 @@ func (oc *optimizingClient) updateStats(stats []*requestStat) {
 
 	// update the round trip times with new samples
 	for _, next := range stats {
+		if next == nil {
+			continue
+		}
 		for _, curr := range oc.stats {
 			if curr.client == next.client {
-				if curr.startTime.Before(next.startTime) {
+				// An unmeasured client (rtt == 0) always takes the sample: it
+				// has no previous measurement that could be more recent.
+				if curr.rtt == 0 || curr.startTime.Before(next.startTime) {
 					curr.rtt = next.rtt
 					curr.startTime = next.startTime
 				}

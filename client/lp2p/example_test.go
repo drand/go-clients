@@ -54,10 +54,22 @@ func ExampleNewPubsub() {
 		panic(err)
 	}
 
-	// This can be slow to "start"
-	for res := range c.Watch(context.Background()) {
-		expected := common.CurrentRound(time.Now().Unix(), info.Period, info.GenesisTime)
-		fmt.Println("correct round:", expected == res.GetRound(), "with", len(res.GetRandomness()), "random bytes")
+	// This can be slow to "start": the gossipsub mesh has to form with the
+	// public relays before any beacon is delivered. Bound the wait so a relay
+	// that never delivers fails this example with a clear diff instead of
+	// blocking until the whole package hits its test timeout.
+	watchCtx, cancelWatch := context.WithTimeout(ctx, 90*time.Second)
+	defer cancelWatch()
+
+	for res := range c.Watch(watchCtx) {
+		current := common.CurrentRound(time.Now().Unix(), info.Period, info.GenesisTime)
+		// The clock is read after the beacon was received, so it can already
+		// have crossed into the next round; a small clock offset can equally
+		// put the received round just ahead of the locally computed one.
+		// Comparing for strict equality therefore fails at period boundaries,
+		// so check that the round is a current one rather than the exact one.
+		recent := res.GetRound()+1 >= current && res.GetRound() <= current+1
+		fmt.Println("correct round:", recent, "with", len(res.GetRandomness()), "random bytes")
 		// we just waited on the first one as an example
 		break
 	}
