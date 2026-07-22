@@ -105,6 +105,7 @@ func ConstructHost(priv crypto.PrivKey, listenAddr string, bootstrap []ma.Multia
 		pubsub.WithDirectConnectTicks(directConnectTicks),
 	)
 	if err != nil {
+		h.Close()
 		return nil, nil, fmt.Errorf("constructing pubsub: %w", err)
 	}
 

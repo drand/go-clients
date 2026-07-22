@@ -3,6 +3,7 @@ package lp2p
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -41,6 +42,7 @@ type GossipRelayNode struct {
 	t         *pubsub.Topic
 	addrs     []ma.Multiaddr
 	done      chan struct{}
+	shutdown  sync.Once
 }
 
 // NewGossipRelayNode starts a new gossip-relay relay node.
@@ -66,6 +68,7 @@ func NewGossipRelayNode(l log.Logger, cfg *GossipRelayConfig) (*GossipRelayNode,
 
 	addrs, err := h.Network().InterfaceListenAddresses()
 	if err != nil {
+		h.Close()
 		return nil, fmt.Errorf("getting InterfaceListenAddresses: %w", err)
 	}
 
@@ -75,6 +78,7 @@ func NewGossipRelayNode(l log.Logger, cfg *GossipRelayConfig) (*GossipRelayNode,
 	l.Infow("Joining PubSubTopic", "chainhash", cfg.ChainHash)
 	t, err := ps.Join(PubSubTopic(cfg.ChainHash))
 	if err != nil {
+		h.Close()
 		return nil, fmt.Errorf("joining topic: %w", err)
 	}
 
@@ -108,9 +112,21 @@ func (g *GossipRelayNode) Multiaddrs() []ma.Multiaddr {
 	return b
 }
 
-// Shutdown stops the relay node.
+// Shutdown stops the relay node, releasing the pubsub topic and the libp2p
+// host along with it. It is safe to call more than once.
 func (g *GossipRelayNode) Shutdown() {
-	close(g.done)
+	g.shutdown.Do(func() {
+		close(g.done)
+
+		// closing only the done channel left the topic, the listening sockets
+		// and the whole host alive for the rest of the process lifetime.
+		if err := g.t.Close(); err != nil {
+			g.l.Errorw("closing pubsub topic", "err", err)
+		}
+		if err := g.h.Close(); err != nil {
+			g.l.Errorw("closing libp2p host", "err", err)
+		}
+	})
 }
 
 // ParseMultiaddrSlice parses a list of addresses into multiaddrs
