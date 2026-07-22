@@ -4,11 +4,11 @@ randomness from drand, including retry, validation, caching and
 optimization features.
 
 The "From" option allows you to specify clients that work over particular
-transports. HTTP, gRPC and libp2p PubSub clients are provided as
-subpackages https://pkg.go.dev/github.com/drand/go-clients/internal/client/http,
-https://pkg.go.dev/github.com/drand/go-clients/internal/client/grpc and
-https://pkg.go.dev/github.com/drand/go-clients/internal/lp2p/clientlp2p/client
-respectively. Note that you are not restricted to just one client. You can use
+transports. HTTP and libp2p PubSub clients are provided as subpackages
+https://pkg.go.dev/github.com/drand/go-clients/client/http and
+https://pkg.go.dev/github.com/drand/go-clients/client/lp2p respectively.
+Note that drand does not expose public gRPC endpoints, so the gRPC client
+lives in the internal packages used by the relays. Note that you are not restricted to just one client. You can use
 multiple clients of the same type or of different types. The base client will
 periodically "speed test" it's clients, failover, cache results and aggregate
 calls to "Watch" to reduce requests.
@@ -24,7 +24,7 @@ to be needed/customized:
 	WithCacheSize()
 		should be set to something sensible for your application.
 
-	WithVerifiedResult()
+	WithTrustedResult()
 	WithFullChainVerification()
 		both should be set for increased security if you have
 		persistent state and expect to be following the chain.

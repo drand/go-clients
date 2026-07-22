@@ -42,8 +42,9 @@ func TestUnsubAfterCloseDoesNotPanic(t *testing.T) {
 
 	require.NotPanics(t, func() { end() }, "unsubscribing after the client closed the channel must not panic")
 
-	_, ok := <-ch
-	require.False(t, ok, "channel should be closed")
+	c.subs.Lock()
+	defer c.subs.Unlock()
+	require.Empty(t, c.subs.M, "the subscription should have been dropped")
 }
 
 // TestUnsubIsIdempotent ensures calling the unsubscribe function more than once
