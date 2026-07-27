@@ -10,7 +10,7 @@ https://pkg.go.dev/github.com/drand/go-clients/client/lp2p respectively.
 Note that drand does not expose public gRPC endpoints, so the gRPC client
 lives in the internal packages used by the relays. Note that you are not restricted to just one client. You can use
 multiple clients of the same type or of different types. The base client will
-periodically "speed test" it's clients, failover, cache results and aggregate
+periodically "speed test" its clients, failover, cache results and aggregate
 calls to "Watch" to reduce requests.
 
 WARNING: When using the client you should use the "WithChainHash" or
