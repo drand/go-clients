@@ -12,6 +12,8 @@ import (
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/go-clients/internal/lib"
 	"github.com/drand/go-clients/internal/lp2p"
+	"github.com/drand/go-clients/internal/metrics"
+	"github.com/drand/go-clients/internal/metrics/pprof"
 )
 
 // Automatically set through -ldflags
@@ -89,9 +91,21 @@ var runCmd = &cli.Command{
 		if cctx.IsSet(lib.HashFlag.Name) || cctx.IsSet(lib.GroupConfFlag.Name) {
 			fmt.Printf("--%s and --%s are deprecated. Use --%s or --%s instead\n",
 				lib.HashFlag.Name,
-				lib.GroupConfFlag,
+				lib.GroupConfFlag.Name,
 				lib.HashListFlag.Name,
 				lib.GroupConfListFlag.Name)
+		}
+
+		// Instrumenting the clients only populates the collectors; without a
+		// server bound to the requested address nothing was ever exposed, so
+		// --metrics silently did nothing. One server serves the whole process,
+		// which may relay several chains.
+		if metricsBind := cctx.String(metricsFlag.Name); metricsBind != "" {
+			lis := metrics.Start(log.DefaultLogger(), metricsBind, pprof.WithProfile(), nil)
+			if lis == nil {
+				return fmt.Errorf("failed to bind metrics server to %q", metricsBind)
+			}
+			defer lis.Close()
 		}
 
 		switch {

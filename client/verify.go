@@ -120,15 +120,24 @@ func (v *verifyingClient) getTrustedPreviousSignature(ctx context.Context, round
 		return []byte{}, fmt.Errorf("could not get info: %w", err)
 	}
 
+	if round == 0 {
+		return []byte{}, fmt.Errorf("invalid round 0: rounds start at 1")
+	}
+
 	if round == 1 {
 		return info.GenesisSeed, nil
 	}
 
-	trustRound := uint64(1)
+	// Invariant maintained below: trustPrevSig is the signature *of* trustRound,
+	// i.e. the previous signature needed to verify round trustRound+1.
+	// The genesis seed plays that role for round 0, which does not exist.
+	trustRound := uint64(0)
 	var trustPrevSig []byte
 
 	v.potLk.Lock()
-	if v.pointOfTrust == nil || v.pointOfTrust.GetRound() > round {
+	// A point of trust at or beyond the requested round cannot supply the
+	// previous signature for it, so fall back to walking from genesis.
+	if v.pointOfTrust == nil || v.pointOfTrust.GetRound() >= round {
 		// slow path
 		v.potLk.Unlock()
 		trustPrevSig, err = v.getTrustedPreviousSignature(ctx, 1)

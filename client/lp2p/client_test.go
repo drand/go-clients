@@ -82,8 +82,13 @@ func TestGRPCClientTestFunc(t *testing.T) {
 	baseRound := uint64(1969)
 
 	mockService := svc.(mock.Service)
-	// pub sub polls every 200ms
-	wait := 250 * time.Millisecond
+	// Each emitted round advances the mock server's clock by one period, while
+	// the gossip validator rejects beacons whose round time is still in the
+	// future according to the real clock. Emitting faster than the one second
+	// period therefore lets the server run ahead of real time until a round is
+	// rejected and never reaches the watcher, so pace the emissions at slightly
+	// more than one period. Pubsub itself only polls every 200ms.
+	wait := 1100 * time.Millisecond
 	for i := range uint64(3) {
 		time.Sleep(wait)
 		mockService.EmitRand(false)

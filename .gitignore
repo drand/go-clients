@@ -1,2 +1,3 @@
-# Our binary
-go-clients
+# Our binaries
+drand-cli
+drand-relay-gossip

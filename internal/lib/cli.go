@@ -129,7 +129,11 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	var info *chainCommon.Info
 	var err error
 	var hash []byte
-	if groupPath := c.Path(GroupConfFlag.Name); groupPath != "" {
+	groupPath, err := groupConfPath(c)
+	if err != nil {
+		return nil, err
+	}
+	if groupPath != "" {
 		l.Debugw("parsing group-conf file")
 		info, err = chainInfoFromGroupTOML(groupPath)
 		if err != nil {
@@ -157,8 +161,12 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	}
 	l.Debugw("built GRPC Client", "successful", len(grc))
 
-	if c.String(HashFlag.Name) != "" {
-		hash, err = hex.DecodeString(c.String(HashFlag.Name))
+	hashFlag, err := chainHash(c)
+	if err != nil {
+		return nil, err
+	}
+	if hashFlag != "" {
+		hash, err = hex.DecodeString(hashFlag)
 		if err != nil {
 			return nil, err
 		}
@@ -167,7 +175,7 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 				"%w for beacon %s %v != %v",
 				drand.ErrInvalidChainHash,
 				info.ID,
-				c.String(HashFlag.Name),
+				hashFlag,
 				hex.EncodeToString(info.Hash()),
 			)
 		}
@@ -206,16 +214,58 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	return client.Wrap(clients, opts...)
 }
 
+// chainHash returns the chain hash the client should be pinned to, accepting
+// either the singular HashFlag or a single-valued HashListFlag. The list form
+// exists for the relay, which follows several chains at once, but it is also
+// registered on the client commands, so it has to be honoured here or the flag
+// silently provides no verification at all.
+func chainHash(c *cli.Context) (string, error) {
+	if h := c.String(HashFlag.Name); h != "" {
+		return h, nil
+	}
+	hashes := c.StringSlice(HashListFlag.Name)
+	switch len(hashes) {
+	case 0:
+		return "", nil
+	case 1:
+		return hashes[0], nil
+	default:
+		return "", fmt.Errorf("a client follows a single chain: --%s expects one hash, got %d",
+			HashListFlag.Name, len(hashes))
+	}
+}
+
+// groupConfPath returns the group configuration path, accepting either the
+// singular GroupConfFlag or a single-valued GroupConfListFlag, for the same
+// reason as chainHash.
+func groupConfPath(c *cli.Context) (string, error) {
+	if p := c.Path(GroupConfFlag.Name); p != "" {
+		return p, nil
+	}
+	paths := c.StringSlice(GroupConfListFlag.Name)
+	switch len(paths) {
+	case 0:
+		return "", nil
+	case 1:
+		return paths[0], nil
+	default:
+		return "", fmt.Errorf("a client follows a single chain: --%s expects one path, got %d",
+			GroupConfListFlag.Name, len(paths))
+	}
+}
+
 func buildGrpcClient(c *cli.Context, info *chainCommon.Info) ([]drand.Client, *chainCommon.Info, error) {
 	if !c.IsSet(GRPCConnectFlag.Name) {
 		return nil, info, nil
 	}
 
 	var hash []byte
-	if c.IsSet(HashFlag.Name) {
-		var err error
-
-		hash, err = hex.DecodeString(c.String(HashFlag.Name))
+	hashFlag, err := chainHash(c)
+	if err != nil {
+		return nil, nil, err
+	}
+	if hashFlag != "" {
+		hash, err = hex.DecodeString(hashFlag)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -366,7 +416,21 @@ func chainInfoFromGroupTOML(filePath string) (*chainCommon.Info, error) {
 	if err != nil {
 		return nil, err
 	}
+	// FromTOML accepts a group without a distributed public key, e.g. a group
+	// proposal that has not gone through a DKG yet. NewChainInfo dereferences it
+	// unconditionally, so without this guard such a file panics instead of
+	// reporting a decode error.
+	if g.PublicKey == nil {
+		return nil, fmt.Errorf("group file %q has no distributed public key", filePath)
+	}
 	return chainCommon.NewChainInfo(g), nil
+}
+
+// usableChainInfo reports whether a decode produced something that can actually
+// serve as a root of trust, rather than a zero-valued struct that happens to
+// have unmarshalled without error.
+func usableChainInfo(i *chainCommon.Info) bool {
+	return i != nil && i.PublicKey != nil && i.Scheme != ""
 }
 
 func chainInfoFromChainInfoJSON(filePath string) (*chainCommon.Info, error) {
@@ -374,9 +438,25 @@ func chainInfoFromChainInfoJSON(filePath string) (*chainCommon.Info, error) {
 	if err != nil {
 		return nil, err
 	}
-	info := new(chainCommon.Info)
-	if err := json.Unmarshal(b, info); err == nil {
+
+	// The packet encoding is what relays serve from /info and what Info.ToJSON
+	// writes, so it is tried first. The plain struct encoding shares some field
+	// names with it but reads others differently ("group_hash" vs "groupHash",
+	// no "metadata"), so decoding a packet-form file as a struct succeeds while
+	// silently yielding an empty scheme and genesis seed -- and therefore the
+	// wrong chain hash -- rather than falling through to the correct decoder.
+	info, protoErr := chainCommon.InfoFromJSON(bytes.NewBuffer(b))
+	if protoErr == nil && usableChainInfo(info) {
 		return info, nil
 	}
-	return chainCommon.InfoFromJSON(bytes.NewBuffer(b))
+
+	structInfo := new(chainCommon.Info)
+	if structErr := json.Unmarshal(b, structInfo); structErr == nil && usableChainInfo(structInfo) {
+		return structInfo, nil
+	}
+
+	if protoErr != nil {
+		return nil, protoErr
+	}
+	return nil, fmt.Errorf("could not decode %q as drand chain info", filePath)
 }

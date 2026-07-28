@@ -15,8 +15,15 @@ var chainHash = "8990e7a9aaed2ffed73dbd7092123d6f289930540d7651336225dc172e51b2c
 func ExampleNewSimpleClient() {
 	lg := log.New(nil, log.DebugLevel, true)
 
-	httpClient, err := http.NewSimpleClient("http://api.drand.sh/", chainHash)
+	httpClient, err := http.NewSimpleClient("https://api.drand.sh/", chainHash)
+	if err != nil {
+		panic(err)
+	}
+
 	chb, err := hex.DecodeString(chainHash)
+	if err != nil {
+		panic(err)
+	}
 
 	c, err := client.New(client.From(httpClient), // use a concrete client implementations
 		client.WithChainHash(chb),

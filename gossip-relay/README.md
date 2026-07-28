@@ -13,7 +13,7 @@
       - [Failover](#failover)
       - [Configuring the libp2p pubsub node](#configuring-the-libp2p-pubsub-node)
     - [Usage from a golang drand client](#usage-from-a-golang-drand-client)
-      - [With Group TOML or Chain Info](#with-group-toml-or-chain-info)
+      - [With Chain Info](#with-chain-info)
       - [With Known Chain Hash](#with-known-chain-hash)
       - [Insecurely](#insecurely)
 
@@ -62,10 +62,10 @@ Publish topic=/drand/pubsub/v0.0.0/<chain-hash> data={randomness}
 ```sh
 # Clone this repo
 git clone https://github.com/drand/go-clients.git
-cd drand
+cd go-clients
 # Build the executable
-make relay-gossip-relay
-# Outputs a `drand-relay-gossip-relay` executable to the current directory.
+make drand-relay-gossip
+# Outputs a `drand-relay-gossip` executable to the current directory.
 ```
 
 ## Usage
@@ -77,20 +77,20 @@ _Note_: You can provide multiple values to both `-hash-list` and`-group-conf-lis
 ### Relay gRPC
 
 ```sh
-drand-relay-gossip-relay run -grpc-connect=127.0.0.1:3000 \
+drand-relay-gossip run -grpc-connect=127.0.0.1:3000 \
                        -cert=/path/to/grpc-drand-cert
 ```
 
 If you do not have gRPC transport credentials, you can use the `-insecure` flag:
 
 ```sh
-drand-relay-gossip-relay run -grpc-connect=127.0.0.1:3000 \
+drand-relay-gossip run -grpc-connect=127.0.0.1:3000 \
                        -insecure
 ```
 
 Or, with a hashlist:
 ```shell
- drand-relay-gossip-relay run -grpc-connect=127.0.0.1:3000 \
+ drand-relay-gossip run -grpc-connect=127.0.0.1:3000 \
                        -insecure \
                        -hash-list=6093f9e4320c285ac4aab50ba821cd5678ec7c5015d3d9d11ef89e2a99741e83,dbd506d6ef76e5f386f41c651dcb808c5bcbd75471cc4eafa3f4df7ad4e4c493
 ```
@@ -100,7 +100,7 @@ Or, with a hashlist:
 The gossip relay can also relay directly from an HTTP API. You can specify multiple endpoints to enable failover.
 
 ```sh
-drand-relay-gossip-relay run -url=https://api.drand.sh \
+drand-relay-gossip run -url=https://api.drand.sh \
                        -url=https://api2.drand.sh \
                        -hash-list=dbd506d6ef76e5f386f41c651dcb808c5bcbd75471cc4eafa3f4df7ad4e4c493
 ```
@@ -110,7 +110,7 @@ drand-relay-gossip-relay run -url=https://api.drand.sh \
 The gossip relay can also relay directly from _other_ gossip relays. You can specify multiple peers to directly connect with. In this case, a group configuration file must be specified since there's no way to retrieve chain information over pubsub.
 
 ```sh
-drand-relay-gossip-relay run -relay=/ip4/127.0.0.1/tcp/44544/p2p/QmPeerID0 \
+drand-relay-gossip run -relay=/ip4/127.0.0.1/tcp/44544/p2p/QmPeerID0 \
                        -relay=/ip4/127.0.0.1/tcp/44545/p2p/QmPeerID1 \
                        -group-conf-list=/home/user/.drand/groups/drand_group.toml
 ```
@@ -118,7 +118,7 @@ drand-relay-gossip-relay run -relay=/ip4/127.0.0.1/tcp/44544/p2p/QmPeerID0 \
 Alternatively, you can provide URL(s) of HTTP API(s) that can be contacted to retrieve chain information. In this case we must provide the chain `-hash` to verify the information we retrieve is for the chain we expect (or provide the `-insecure` flag):
 
 ```sh
-drand-relay-gossip-relay run -relay=/ip4/127.0.0.1/tcp/44544/p2p/QmPeerID0 \
+drand-relay-gossip run -relay=/ip4/127.0.0.1/tcp/44544/p2p/QmPeerID0 \
                        -relay=/ip4/127.0.0.1/tcp/44545/p2p/QmPeerID1 \
                        -url=http://127.0.0.1:3002 \
                        -hash-list=6093f9e4320c285ac4aab50ba821cd5678ec7c5015d3d9d11ef89e2a99741e83
@@ -127,7 +127,7 @@ drand-relay-gossip-relay run -relay=/ip4/127.0.0.1/tcp/44544/p2p/QmPeerID0 \
 If you want to verify multiple networks, you can provide the `-hash-list` flag, e.g.:
 
 ```shell
-drand-relay-gossip-relay run -relay=/ip4/127.0.0.1/tcp/44544/p2p/QmPeerID0 \
+drand-relay-gossip run -relay=/ip4/127.0.0.1/tcp/44544/p2p/QmPeerID0 \
                        -relay=/ip4/127.0.0.1/tcp/44545/p2p/QmPeerID1 \
                        -url=http://127.0.0.1:3002 \
                        -hash-list=dbd506d6ef76e5f386f41c651dcb808c5bcbd75471cc4eafa3f4df7ad4e4c493,8990e7a9aaed2ffed73dbd7092123d6f289930540d7651336225dc172e51b2ce
@@ -144,13 +144,13 @@ If there is a set of peers the gossip relay should connect with and stay connect
 The `-url` flag provides the URL(s) of alternative HTTP API endpoints that may be able to provide randomness in the event of a failure of the gRPC connection/libp2p pubsub network. Each randomness round is raced with the HTTP endpoints when it becomes available such that if gRPC or pubsub take too long to deliver the round it'll be provided over HTTP e.g.
 
 ```sh
-drand-relay-gossip-relay run -grpc-connect=127.0.0.1:3000 \
+drand-relay-gossip run -grpc-connect=127.0.0.1:3000 \
                        -insecure \
                        -url=http://127.0.0.1:3102
 ```
 
 ```sh
-drand-relay-gossip-relay run -relay=/ip4/127.0.0.1/tcp/44544/p2p/QmPeerID0 \
+drand-relay-gossip run -relay=/ip4/127.0.0.1/tcp/44544/p2p/QmPeerID0 \
                        -relay=/ip4/127.0.0.1/tcp/44545/p2p/QmPeerID1 \
                        -hash-list=6093f9e4320c285ac4aab50ba821cd5678ec7c5015d3d9d11ef89e2a99741e83 \
                        -url=http://127.0.0.1:3102
@@ -164,7 +164,7 @@ If not specified a libp2p identity will be generated and stored in an `identity.
 
 ### Usage from a golang drand client
 
-#### With Group TOML or Chain Info
+#### With Chain Info
 
 ```go
 package main
@@ -172,48 +172,64 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
-	clock "github.com/jonboulle/clockwork"
-
-	"github.com/drand/go-clients/client"
-	p2pClient "github.com/drand/go-clients/client/lp2p"
 	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/go-clients/client"
+	p2pClient "github.com/drand/go-clients/client/lp2p"
 )
 
 const (
 	// listenAddr is the multiaddr the local libp2p node should listen on.
 	listenAddr = "/ip4/0.0.0.0/tcp/4453"
-	// relayP2PAddr is the p2p multiaddr of the drand gossipsub relay node to connect to.
-	relayP2PAddr = "/ip4/192.168.1.124/tcp/44544/p2p/QmPeerID"
-	// groupTOMLPath is the path to the group configuration information (in TOML format).
-	groupTOMLPath = "/home/user/.drand/groups/drand_group.toml"
+	// chainInfoPath is the path to the chain information (in JSON format), as
+	// served by the `/{chain-hash}/info` endpoint of a drand HTTP API.
+	chainInfoPath = "/home/user/.drand/chain-info.json"
 )
+
+// relayP2PAddrs are the p2p multiaddrs of the drand gossipsub relay nodes to connect to.
+var relayP2PAddrs = []string{
+	"/dnsaddr/api.drand.sh",
+	"/dnsaddr/api2.drand.sh",
+	"/dnsaddr/api3.drand.sh",
+}
 
 func main() {
 	ctx := context.Background()
 	l := log.DefaultLogger()
-	clk := clock.NewRealClock()
 
-	// Create libp2p pubsub
-	ps, err := p2pClient.NewPubsub(ctx, listenAddr, relayP2PAddr)
+	// Create libp2p pubsub. The local libp2p host is returned as well, so that
+	// it can be closed once you are done with it.
+	ps, h, err := p2pClient.NewPubsub(ctx, listenAddr, relayP2PAddrs)
 	if err != nil {
 		l.Panicw("while creating new p2pClient.NewPubsub", "err", err)
 	}
+	defer h.Close()
 
-	// Extract chain info from group TOML
-	info, err := chain.InfoFromGroupTOML(l, groupTOMLPath)
+	// Read the chain info from a JSON file
+	f, err := os.Open(chainInfoPath)
 	if err != nil {
-		l.Panicw("while extracting info from groupTOML", "err", err)
+		l.Panicw("while opening the chain info file", "err", err)
+	}
+	defer f.Close()
+
+	info, err := chain.InfoFromJSON(f)
+	if err != nil {
+		l.Panicw("while parsing the chain info", "err", err)
 	}
 
-	c, err := client.New(ctx, l, p2pClient.WithPubsub(l, ps, clk, p2pClient.DefaultBufferSize), client.WithChainInfo(info))
+	c, err := client.New(
+		client.WithLogger(l),
+		p2pClient.WithPubsub(ps),
+		client.WithChainInfo(info),
+	)
 	if err != nil {
 		l.Panicw("while creating a new client", "err", err)
 	}
 
 	for res := range c.Watch(ctx) {
-		fmt.Printf("round=%v randomness=%v\n", res.Round(), res.Randomness())
+		fmt.Printf("round=%v randomness=%x\n", res.GetRound(), res.GetRandomness())
 	}
 }
 ```
@@ -226,57 +242,61 @@ You do not need to know the full group info to use the pubsub client if you know
 package main
 
 import (
-  "context"
-  "encoding/hex"
-  "fmt"
+	"context"
+	"encoding/hex"
+	"fmt"
 
-  clock "github.com/jonboulle/clockwork"
-
-  "github.com/drand/go-clients/client"
-  "github.com/drand/go-clients/client/http"
-  gclient "github.com/drand/go-clients/client/lp2p"
-  "github.com/drand/drand/v2/common/log"
+	"github.com/drand/drand/v2/common/log"
+	"github.com/drand/go-clients/client"
+	"github.com/drand/go-clients/client/http"
+	gclient "github.com/drand/go-clients/client/lp2p"
 )
 
 const (
-  // listenAddr is the multiaddr the local libp2p node should listen on.
-  listenAddr = "/ip4/0.0.0.0/tcp/4453"
-  // relayP2PAddr is the p2p multiaddr of the drand gossipsub relay node to connect to.
-  relayP2PAddr = "/ip4/192.168.1.124/tcp/44544/p2p/12D3KooWAe637xuWdRCYkuaZZce13P1F9zJX5gzGUPWZJpsUGUSH"
-  // chainHash is a hash of the group chain information.
-  chainHash = "c599c267a0dd386606f7d6132da8327d57e1004760897c9dd4fb8495c29942b2"
-  // httpRelayURL is the URL of a drand HTTP API endpoint.
-  httpRelayURL = "http://127.0.0.1:3002"
+	// listenAddr is the multiaddr the local libp2p node should listen on.
+	listenAddr = "/ip4/0.0.0.0/tcp/4453"
+	// chainHash is a hash of the group chain information.
+	chainHash = "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+	// httpRelayURL is the URL of a drand HTTP API endpoint.
+	httpRelayURL = "https://api.drand.sh"
 )
 
+// relayP2PAddrs are the p2p multiaddrs of the drand gossipsub relay nodes to connect to.
+var relayP2PAddrs = []string{
+	"/dnsaddr/api.drand.sh",
+	"/dnsaddr/api2.drand.sh",
+	"/dnsaddr/api3.drand.sh",
+}
+
 func main() {
-  ctx := context.Background()
-  lg := log.New(nil, log.DebugLevel, true)
-  clk := clock.NewRealClock()
+	ctx := context.Background()
+	lg := log.New(nil, log.InfoLevel, true)
 
-  // Create libp2p pubsub
-  ps, err := gclient.NewPubsub(ctx, listenAddr, relayP2PAddr)
-  if err != nil {
-    panic(err)
-  }
+	// Create libp2p pubsub. The host is returned so that it can be closed once done.
+	ps, h, err := gclient.NewPubsub(ctx, listenAddr, relayP2PAddrs)
+	if err != nil {
+		lg.Panicw("while creating new gclient.NewPubsub", "err", err)
+	}
+	defer h.Close()
 
-  // Chain hash is used to verify endpoints
-  hash, err := hex.DecodeString(chainHash)
-  if err != nil {
-    panic(err)
-  }
+	// Chain hash is used to verify endpoints
+	hash, err := hex.DecodeString(chainHash)
+	if err != nil {
+		lg.Panicw("while decoding chain hash", "err", err)
+	}
 
-  c, err := client.New(ctx, lg,
-    gclient.WithPubsub(lg, ps, clk, gclient.DefaultBufferSize),
-    client.WithChainHash(hash),
-    client.From(http.ForURLs(ctx, lg, []string{httpRelayURL}, hash)...),
-  )
-  if err != nil {
-    panic(err)
-  }
+	c, err := client.New(
+		client.WithLogger(lg),
+		gclient.WithPubsub(ps),
+		client.WithChainHash(hash),
+		client.From(http.ForURLs(ctx, lg, []string{httpRelayURL}, hash)...),
+	)
+	if err != nil {
+		lg.Panicw("while creating a new client", "err", err)
+	}
 
-  for res := range c.Watch(ctx) {
-    fmt.Printf("round=%v randomness=%v\n", res.Round(), res.Randomness())
-  }
+	for res := range c.Watch(ctx) {
+		fmt.Printf("round=%v randomness=%x\n", res.GetRound(), res.GetRandomness())
+	}
 }
 ```

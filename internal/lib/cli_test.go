@@ -158,3 +158,64 @@ func groupTOMLPath() string {
 	}
 	return filepath.Join(filepath.Dir(file), "..", "..", "internal", "testdata", "default.toml")
 }
+
+// TestClientLibHashListFlag covers --hash-list being honoured as a root of
+// trust. It is registered on the client commands, but Create used to read only
+// --hash, so passing it left the client with no root of trust at all.
+func TestClientLibHashListFlag(t *testing.T) {
+	opts = []client.Option{}
+	lg := log.New(nil, log.DebugLevel, true)
+
+	sch, err := crypto.GetSchemeFromEnv()
+	require.NoError(t, err)
+	clk := clock.NewFakeClockAt(time.Now())
+	addr, info, cancel, _ := httpmock.NewMockHTTPPublicServer(t, false, sch, clk)
+	defer cancel()
+
+	// the correct hash is accepted and serves as the root of trust
+	args := []string{"mock-client", "--url", "http://" + addr, "--hash-list", hex.EncodeToString(info.Hash())}
+	require.NoError(t, run(lg, args), "--hash-list should pin the chain")
+
+	// a mismatching hash is rejected rather than silently ignored
+	args = []string{"mock-client", "--url", "http://" + addr, "--hash-list", hex.EncodeToString(make([]byte, 32))}
+	require.Error(t, run(lg, args), "--hash-list should reject a chain hash mismatch")
+
+	// a client follows a single chain, so several hashes are ambiguous
+	args = []string{
+		"mock-client", "--url", "http://" + addr,
+		"--hash-list", hex.EncodeToString(info.Hash()),
+		"--hash-list", hex.EncodeToString(make([]byte, 32)),
+	}
+	require.Error(t, run(lg, args), "several chain hashes should be refused")
+}
+
+// TestClientLibGroupConfListFlag covers the same silent-drop for
+// --group-conf-list on the client path.
+func TestClientLibGroupConfListFlag(t *testing.T) {
+	opts = []client.Option{}
+	lg := log.New(nil, log.DebugLevel, true)
+
+	args := []string{"mock-client", "--relay", fakeGossipRelayAddr, "--group-conf-list", groupTOMLPath()}
+	require.NoError(t, run(lg, args), "--group-conf-list should be honoured")
+}
+
+// TestChainInfoFromGroupTOMLWithoutPublicKey ensures a group file that has no
+// distributed public key -- a group proposal that never went through a DKG --
+// is reported as a decode error. NewChainInfo dereferences the key
+// unconditionally, so this used to panic with a nil pointer dereference.
+func TestChainInfoFromGroupTOMLWithoutPublicKey(t *testing.T) {
+	src, err := os.ReadFile(groupTOMLPath())
+	require.NoError(t, err)
+
+	// drop the [PublicKey] section and everything after it
+	idx := bytes.Index(src, []byte("[PublicKey]"))
+	require.Positive(t, idx, "test fixture should contain a [PublicKey] section")
+
+	path := filepath.Join(t.TempDir(), "nokey.toml")
+	require.NoError(t, os.WriteFile(path, src[:idx], 0o600))
+
+	require.NotPanics(t, func() {
+		_, err := chainInfoFromGroupTOML(path)
+		require.Error(t, err, "a group without a public key should not decode")
+	})
+}

@@ -408,3 +408,24 @@ func fakeChainInfo(t *testing.T) *chain.Info {
 		Scheme:      sch.Name,
 	}
 }
+
+// TestNewRejectsChainHashMismatch ensures the configured chain hash is enforced
+// against the chain info adopted from the clients. tryPopulateInfo takes the
+// info from the first client that answers, so without this check a client that
+// advertises a different chain would supply the public key used by every
+// verifier.
+func TestNewRejectsChainHashMismatch(t *testing.T) {
+	sch, err := crypto.GetSchemeFromEnv()
+	require.NoError(t, err)
+
+	info, results := mock.VerifiableResults(2, sch)
+	mc := clientMock.Client{Results: results, OptionalInfo: info}
+
+	wrongHash := make([]byte, len(info.Hash()))
+
+	_, err = client.New(
+		client.From(clientMock.ClientWithInfo(info), &mc),
+		client.WithChainHash(wrongHash),
+	)
+	require.ErrorIs(t, err, drand.ErrInvalidChainHash)
+}

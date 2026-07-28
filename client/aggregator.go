@@ -34,14 +34,21 @@ func newWatchAggregator(l log.Logger, c, wc drand.Client, autoWatch bool, autoWa
 		autoWatch:      autoWatch,
 		autoWatchRetry: autoWatchRetry,
 		log:            l,
-		subscribers:    make([]subscriber, 0),
+		subscribers:    make([]*subscriber, 0),
 	}
 	return aggregator
 }
 
 type subscriber struct {
-	ctx context.Context
-	c   chan drand.Result
+	ctx  context.Context
+	c    chan drand.Result
+	once sync.Once
+}
+
+// close closes the subscriber channel exactly once, since both the distribute
+// loop and the per-subscriber watchdog can retire a subscriber.
+func (s *subscriber) close() {
+	s.once.Do(func() { close(s.c) })
 }
 
 type watchAggregator struct {
@@ -52,9 +59,13 @@ type watchAggregator struct {
 	log             log.Logger
 	cancelAutoWatch context.CancelFunc
 
-	subscriberLock sync.Mutex
-	subscribers    []subscriber
-	cancelPassive  context.CancelFunc
+	subscriberLock   sync.Mutex
+	subscribers      []*subscriber
+	cancelDistribute context.CancelFunc
+	cancelPassive    context.CancelFunc
+	// passiveToken identifies the currently running passive sink, so a sink
+	// that ends can only clear its own cancel function and not a newer one's.
+	passiveToken *int
 }
 
 // Start initiates auto watching if configured to do so.
@@ -130,8 +141,10 @@ func (c *watchAggregator) passiveWatch(ctx context.Context) <-chan drand.Result 
 	wc := make(chan drand.Result)
 	if len(c.subscribers) == 0 {
 		ctx, cancel := context.WithCancel(ctx)
+		token := new(int)
 		c.cancelPassive = cancel
-		go c.sink(c.passiveClient.Watch(ctx), wc)
+		c.passiveToken = token
+		go c.sink(c.passiveClient.Watch(ctx), wc, token)
 	} else {
 		// trigger the startAutowatch to retry on backoff
 		close(wc)
@@ -143,70 +156,109 @@ func (c *watchAggregator) Watch(ctx context.Context) <-chan drand.Result {
 	c.subscriberLock.Lock()
 	defer c.subscriberLock.Unlock()
 
-	sub := subscriber{ctx, make(chan drand.Result, aggregatorWatchBuffer)}
+	sub := &subscriber{ctx: ctx, c: make(chan drand.Result, aggregatorWatchBuffer)}
 	c.subscribers = append(c.subscribers, sub)
 
 	if len(c.subscribers) == 1 {
 		if c.cancelPassive != nil {
 			c.cancelPassive()
 			c.cancelPassive = nil
+			c.passiveToken = nil
 		}
-		ctx, cancel := context.WithCancel(ctx)
-		go c.distribute(c.Client.Watch(ctx), cancel)
+		// The upstream watch is deliberately not derived from this subscriber's
+		// context: it is shared by every subscriber, so tying its lifetime to
+		// whoever happened to subscribe first would tear down the others when
+		// that one goes away. It is cancelled once the last subscriber leaves,
+		// and by Close.
+		wctx, cancel := context.WithCancel(context.Background())
+		c.cancelDistribute = cancel
+		go c.distribute(c.Client.Watch(wctx), cancel)
 	}
+
+	// Each subscriber is retired on its own context, independently of the others.
+	go func() {
+		<-ctx.Done()
+		c.removeSubscriber(sub)
+	}()
+
 	return sub.c
 }
 
-func (c *watchAggregator) sink(in <-chan drand.Result, out chan drand.Result) {
+// removeSubscriber retires a single subscriber, closing its channel. When the
+// last subscriber leaves, the shared upstream watch is cancelled.
+func (c *watchAggregator) removeSubscriber(sub *subscriber) {
+	c.subscriberLock.Lock()
+	defer c.subscriberLock.Unlock()
+
+	for i, s := range c.subscribers {
+		if s == sub {
+			c.subscribers = append(c.subscribers[:i], c.subscribers[i+1:]...)
+			break
+		}
+	}
+	sub.close()
+
+	if len(c.subscribers) == 0 && c.cancelDistribute != nil {
+		c.cancelDistribute()
+		c.cancelDistribute = nil
+	}
+}
+
+func (c *watchAggregator) sink(in <-chan drand.Result, out chan drand.Result, token *int) {
 	defer close(out)
 	for range in {
 		continue
+	}
+
+	// Clear the passive watch state now that this stream has ended, otherwise
+	// passiveWatch keeps seeing a non-nil cancelPassive, refuses to start a new
+	// passive watch and returns nil, which leaves startAutoWatch selecting on a
+	// nil channel forever.
+	c.subscriberLock.Lock()
+	defer c.subscriberLock.Unlock()
+	if c.passiveToken == token {
+		if c.cancelPassive != nil {
+			c.cancelPassive()
+		}
+		c.cancelPassive = nil
+		c.passiveToken = nil
 	}
 }
 
 func (c *watchAggregator) distribute(in <-chan drand.Result, cancel context.CancelFunc) {
 	defer cancel()
 	for {
+		m, ok := <-in
+
 		c.subscriberLock.Lock()
+
+		if !ok {
+			// the upstream watch ended, so no further results are coming
+			for _, s := range c.subscribers {
+				s.close()
+			}
+			c.subscribers = nil
+			c.cancelDistribute = nil
+			c.subscriberLock.Unlock()
+			return
+		}
+
 		if len(c.subscribers) == 0 {
 			c.subscriberLock.Unlock()
 			c.log.Warnw("", "watch_aggregator", "no subscribers to distribute results to")
 			return
 		}
-		aCtx := c.subscribers[0].ctx
-		c.subscriberLock.Unlock()
 
-		var m drand.Result
-		var ok bool
-
-		select {
-		case m, ok = <-in:
-		case <-aCtx.Done():
-		}
-
-		c.subscriberLock.Lock()
-		curr := c.subscribers
-		c.subscribers = c.subscribers[:0]
-
-		for _, s := range curr {
-			if ok && s.ctx.Err() == nil {
-				c.subscribers = append(c.subscribers, s)
-				if m != nil {
-					select {
-					case s.c <- m:
-					default:
-						c.log.Warnw("", "watch_aggregator", "dropped watch message to subscriber. full channel")
-					}
+		for _, s := range c.subscribers {
+			if m != nil {
+				select {
+				case s.c <- m:
+				default:
+					c.log.Warnw("", "watch_aggregator", "dropped watch message to subscriber. full channel")
 				}
-			} else {
-				close(s.c)
 			}
 		}
 		c.subscriberLock.Unlock()
-
-		if !ok {
-			return
-		}
 	}
 }
 
@@ -215,5 +267,18 @@ func (c *watchAggregator) Close() error {
 	if c.cancelAutoWatch != nil {
 		c.cancelAutoWatch()
 	}
+
+	c.subscriberLock.Lock()
+	if c.cancelDistribute != nil {
+		c.cancelDistribute()
+		c.cancelDistribute = nil
+	}
+	if c.cancelPassive != nil {
+		c.cancelPassive()
+		c.cancelPassive = nil
+		c.passiveToken = nil
+	}
+	c.subscriberLock.Unlock()
+
 	return err
 }
