@@ -168,7 +168,7 @@ func (c *watchAggregator) Watch(ctx context.Context) <-chan drand.Result {
 		// The upstream watch is deliberately not derived from this subscriber's
 		// context: it is shared by every subscriber, so tying its lifetime to
 		// whoever happened to subscribe first would tear down the others when
-		// that one goes away. It is cancelled once the last subscriber leaves,
+		// that one goes away. It is canceled once the last subscriber leaves,
 		// and by Close.
 		wctx, cancel := context.WithCancel(context.Background())
 		c.cancelDistribute = cancel
@@ -185,7 +185,7 @@ func (c *watchAggregator) Watch(ctx context.Context) <-chan drand.Result {
 }
 
 // removeSubscriber retires a single subscriber, closing its channel. When the
-// last subscriber leaves, the shared upstream watch is cancelled.
+// last subscriber leaves, the shared upstream watch is canceled.
 func (c *watchAggregator) removeSubscriber(sub *subscriber) {
 	c.subscriberLock.Lock()
 	defer c.subscriberLock.Unlock()

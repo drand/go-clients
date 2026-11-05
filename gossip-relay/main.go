@@ -148,9 +148,9 @@ var runCmd = &cli.Command{
 		}
 
 		// Wait until we are signaled to shutdown.
-		<-cctx.Context.Done()
+		<-cctx.Done()
 
-		return cctx.Context.Err()
+		return cctx.Err()
 	},
 }
 
