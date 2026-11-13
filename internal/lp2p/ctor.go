@@ -110,7 +110,7 @@ func ConstructHost(priv crypto.PrivKey, listenAddr string, bootstrap []ma.Multia
 	}
 
 	go func() {
-		mrand.Shuffle(len(addrInfos), func(i, j int) {
+		mrand.Shuffle(len(addrInfos), func(i, j int) { //nolint:gosec // bootstrap order needs no crypto randomness
 			addrInfos[i], addrInfos[j] = addrInfos[j], addrInfos[i]
 		})
 		for _, ai := range addrInfos {

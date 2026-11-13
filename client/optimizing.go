@@ -397,7 +397,7 @@ func (oc *optimizingClient) trackWatchResults(info *chain.Info, in chan watchRes
 
 	latest := uint64(0)
 	for r := range in {
-		round := r.Result.GetRound()
+		round := r.GetRound()
 		timeOfRound := time.Unix(common.TimeOfRound(info.Period, info.GenesisTime, round), 0)
 		stat := requestStat{
 			client:    r.Client,

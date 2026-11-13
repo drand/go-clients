@@ -25,7 +25,7 @@ func resolveAddresses(ctx context.Context, addrs []ma.Multiaddr, resolver transp
 		resolver = madns.DefaultResolver
 	}
 
-	var maddrs []ma.Multiaddr //nolint:prealloc
+	var maddrs []ma.Multiaddr
 	var wg sync.WaitGroup
 	resolveErrC := make(chan error, len(addrs))
 
