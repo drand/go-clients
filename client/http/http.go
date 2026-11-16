@@ -193,7 +193,7 @@ func IsServerReady(ctx context.Context, addr string) error {
 		}
 
 		// stop waiting as soon as the caller gives up rather than burning the
-		// full retry budget on a cancelled context.
+		// full retry budget on a canceled context.
 		select {
 		case <-ctx.Done():
 			return ctx.Err()

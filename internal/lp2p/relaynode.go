@@ -166,7 +166,7 @@ func (g *GossipRelayNode) background(w client.Watcher) {
 					Round:             res.GetRound(),
 					Signature:         res.GetSignature(),
 					PreviousSignature: rd.GetPreviousSignature(),
-					Randomness:        res.GetRandomness(),
+					Randomness:        res.GetRandomness(), //nolint:staticcheck // still read by older subscribers
 				})
 				if err != nil {
 					g.l.Errorw("", "relay_node", "err marshaling", "err", err)

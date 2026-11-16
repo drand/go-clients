@@ -18,6 +18,15 @@ import (
 	"github.com/drand/drand/v2/common/log"
 )
 
+// Label names shared by several metrics.
+const (
+	beaconIDLabel = "beacon_id"
+	methodLabel   = "method"
+	urlLabel      = "url"
+	// HTTPAddressLabel identifies the HTTP endpoint a client metric refers to.
+	HTTPAddressLabel = "http_address"
+)
+
 var (
 	// PrivateMetrics about the internal world (go process, private stuff)
 	PrivateMetrics = prometheus.NewRegistry()
@@ -49,38 +58,38 @@ var (
 	GroupSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "group_size",
 		Help: "Number of peers in the current group",
-	}, []string{"beacon_id"})
+	}, []string{beaconIDLabel})
 
 	GroupThreshold = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "group_threshold",
 		Help: "Number of shares needed for beacon reconstruction",
-	}, []string{"beacon_id"})
+	}, []string{beaconIDLabel})
 
 	// BeaconDiscrepancyLatency (Group) millisecond duration between time beacon created and
 	// calculated time of round.
 	BeaconDiscrepancyLatency = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "beacon_discrepancy_latency",
 		Help: "Discrepancy between beacon creation time and calculated round time",
-	}, []string{"beacon_id"})
+	}, []string{beaconIDLabel})
 
 	// LastBeaconRound is the most recent round (as also seen at /health) stored.
 	LastBeaconRound = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "last_beacon_round",
 		Help: "Last locally stored beacon",
-	}, []string{"beacon_id"})
+	}, []string{beaconIDLabel})
 
 	// HTTPCallCounter (HTTP) how many http requests
 	HTTPCallCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "http_call_counter",
 		Help: "Number of HTTP calls received",
-	}, []string{"code", "method"})
+	}, []string{"code", methodLabel})
 	// HTTPLatency (HTTP) how long http request handling takes
 	HTTPLatency = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name:        "http_response_duration",
 		Help:        "histogram of request latencies",
 		Buckets:     prometheus.DefBuckets,
 		ConstLabels: prometheus.Labels{"handler": "http"},
-	}, []string{"method"})
+	}, []string{methodLabel})
 	// HTTPInFlight (HTTP) how many http requests exist
 	HTTPInFlight = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "http_in_flight",
@@ -99,26 +108,26 @@ var (
 	ClientHTTPHeartbeatSuccess = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "client_http_heartbeat_success",
 		Help: "Number of successful HTTP heartbeats.",
-	}, []string{"http_address"})
+	}, []string{HTTPAddressLabel})
 
 	// ClientHTTPHeartbeatFailure measures the number of times HTTP heartbeats fail.
 	ClientHTTPHeartbeatFailure = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "client_http_heartbeat_failure",
 		Help: "Number of unsuccessful HTTP heartbeats.",
-	}, []string{"http_address"})
+	}, []string{HTTPAddressLabel})
 
 	// ClientHTTPHeartbeatLatency measures the randomness latency of an HTTP source.
 	ClientHTTPHeartbeatLatency = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "client_http_heartbeat_latency",
 		Help: "Randomness latency of an HTTP source.",
-	}, []string{"http_address"})
+	}, []string{HTTPAddressLabel})
 
 	// ClientInFlight measures how many active requests have been made
 	ClientInFlight = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "client_in_flight",
 		Help: "A gauge of in-flight drand client http requests.",
 	},
-		[]string{"url"},
+		[]string{urlLabel},
 	)
 
 	// ClientRequests measures how many total requests have been made
@@ -127,7 +136,7 @@ var (
 			Name: "client_api_requests_total",
 			Help: "A counter for requests from the drand client.",
 		},
-		[]string{"code", "method", "url"},
+		[]string{"code", methodLabel, urlLabel},
 	)
 
 	// ClientDNSLatencyVec tracks the observed DNS resolution times
@@ -137,7 +146,7 @@ var (
 			Help:    "Client drand dns latency histogram.",
 			Buckets: []float64{.005, .01, .025, .05},
 		},
-		[]string{"event", "url"},
+		[]string{"event", urlLabel},
 	)
 
 	// ClientTLSLatencyVec tracks observed TLS connection times
@@ -147,7 +156,7 @@ var (
 			Help:    "Client drand tls latency histogram.",
 			Buckets: []float64{.05, .1, .25, .5},
 		},
-		[]string{"event", "url"},
+		[]string{"event", urlLabel},
 	)
 
 	// ClientLatencyVec tracks raw http request latencies
@@ -157,7 +166,7 @@ var (
 			Help:    "A histogram of client request latencies.",
 			Buckets: prometheus.DefBuckets,
 		},
-		[]string{"url"},
+		[]string{urlLabel},
 	)
 
 	dkgEpoch = prometheus.NewGaugeVec(
@@ -165,44 +174,44 @@ var (
 			Name: "dkg_epoch",
 			Help: "The epoch of any currently in progress or completed DKGs",
 		},
-		[]string{"beacon_id"},
+		[]string{beaconIDLabel},
 	)
 
 	// dkgState (Group) tracks DKG status changes
 	dkgState = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "dkg_state",
 		Help: "DKG state: 0-Not Started, 1-Waiting, 2-In Progress, 3-Done, 4-Unknown, 5-Shutdown",
-	}, []string{"beacon_id"})
+	}, []string{beaconIDLabel})
 
 	// DKGStateTimestamp (Group) tracks the time when the reshare status changes
 	dkgStateTimestamp = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "dkg_state_timestamp",
 		Help: "Timestamp when the DKG state last changed",
-	}, []string{"beacon_id"})
+	}, []string{beaconIDLabel})
 
 	// dkgLeader (Group) tracks whether this node is the leader during DKG
 	dkgLeader = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "dkg_leader",
 		Help: "Is this node the leader during DKG? 0-false, 1-true",
-	}, []string{"beacon_id"})
+	}, []string{beaconIDLabel})
 
 	// reshareState (Group) tracks reshare status changes
 	reshareState = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "reshare_state",
 		Help: "Reshare state: 0-Idle, 1-Waiting, 2-In Progress, 3-Unknown, 4-Shutdown",
-	}, []string{"beacon_id"})
+	}, []string{beaconIDLabel})
 
 	// reshareStateTimestamp (Group) tracks the time when the reshare status changes
 	reshareStateTimestamp = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "reshare_state_timestamp",
 		Help: "Timestamp when the reshare state last changed",
-	}, []string{"beacon_id"})
+	}, []string{beaconIDLabel})
 
 	// reshareLeader (Group) tracks whether this node is the leader during Reshare
 	reshareLeader = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "reshare_leader",
 		Help: "Is this node the leader during Reshare? 0-false, 1-true",
-	}, []string{"beacon_id"})
+	}, []string{beaconIDLabel})
 
 	// drandBuildTime (Group) emits the timestamp when the binary was built in Unix time.
 	drandBuildTime = prometheus.NewUntypedFunc(prometheus.UntypedOpts{
@@ -364,7 +373,7 @@ func Start(logger log.Logger, metricsBind string, pprof http.Handler, cli Client
 	if !strings.Contains(metricsBind, ":") {
 		metricsBind = "127.0.0.1:" + metricsBind
 	}
-	l, err := net.Listen("tcp", metricsBind)
+	l, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", metricsBind)
 	if err != nil {
 		logger.Warnw("", "metrics", "listen failed", "err", err)
 		return nil
@@ -422,7 +431,7 @@ func (l *remotePeerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	l.log.Debugw("Received metrics through GRPC", "from", addr, "err", err)
 
-	_, err = w.Write([]byte(metrics))
+	_, err = w.Write([]byte(metrics)) //nolint:gosec // relays the peer's Prometheus text exposition as-is
 	if err != nil {
 		l.log.Errorw("Error serving remote metrics for peer", "addr", addr)
 	}

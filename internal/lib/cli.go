@@ -126,29 +126,13 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	}
 	l := log.New(nil, level, false)
 
-	var info *chainCommon.Info
-	var err error
 	var hash []byte
-	groupPath, err := groupConfPath(c)
+	info, err := chainInfoFromGroupConf(c, l)
 	if err != nil {
 		return nil, err
 	}
-	if groupPath != "" {
-		l.Debugw("parsing group-conf file")
-		info, err = chainInfoFromGroupTOML(groupPath)
-		if err != nil {
-			l.Infow("Got a group conf file that is not a toml file. Trying it as a ChainInfo json file.", "path", groupPath)
-			info, err = chainInfoFromChainInfoJSON(groupPath)
-			if info == nil || err != nil {
-				return nil, fmt.Errorf("failed to decode group (%s) : %w", groupPath, err)
-			}
-		}
-		l.Debugw("parsing group-conf file, successful")
-
-		opts = append(opts, client.WithChainInfo(info))
-	}
-
 	if info != nil {
+		opts = append(opts, client.WithChainInfo(info))
 		hash = info.Hash()
 	}
 
@@ -156,9 +140,7 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	if err != nil {
 		return nil, err
 	}
-	if len(grc) > 0 {
-		clients = append(clients, grc...)
-	}
+	clients = append(clients, grc...)
 	l.Debugw("built GRPC Client", "successful", len(grc))
 
 	hashFlag, err := chainHash(c)
@@ -190,9 +172,7 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	if err != nil {
 		return nil, err
 	}
-	if len(gc) > 0 {
-		clients = append(clients, gc...)
-	}
+	clients = append(clients, gc...)
 	l.Debugw("built HTTP Client", "successful", len(gc))
 
 	if info != nil && hash != nil && !bytes.Equal(hash, info.Hash()) {
@@ -214,10 +194,31 @@ func Create(c *cli.Context, withInstrumentation bool, opts ...client.Option) (dr
 	return client.Wrap(clients, opts...)
 }
 
+// chainInfoFromGroupConf reads the chain info from the group-conf flag, which
+// may hold either a group TOML or a chain info JSON file. It returns nil when
+// the flag is unset.
+func chainInfoFromGroupConf(c *cli.Context, l log.Logger) (*chainCommon.Info, error) {
+	groupPath, err := groupConfPath(c)
+	if err != nil || groupPath == "" {
+		return nil, err
+	}
+	l.Debugw("parsing group-conf file")
+	info, err := chainInfoFromGroupTOML(groupPath)
+	if err != nil {
+		l.Infow("Got a group conf file that is not a toml file. Trying it as a ChainInfo json file.", "path", groupPath)
+		info, err = chainInfoFromChainInfoJSON(groupPath)
+		if info == nil || err != nil {
+			return nil, fmt.Errorf("failed to decode group (%s) : %w", groupPath, err)
+		}
+	}
+	l.Debugw("parsing group-conf file, successful")
+	return info, nil
+}
+
 // chainHash returns the chain hash the client should be pinned to, accepting
 // either the singular HashFlag or a single-valued HashListFlag. The list form
 // exists for the relay, which follows several chains at once, but it is also
-// registered on the client commands, so it has to be honoured here or the flag
+// registered on the client commands, so it has to be honored here or the flag
 // silently provides no verification at all.
 func chainHash(c *cli.Context) (string, error) {
 	if h := c.String(HashFlag.Name); h != "" {

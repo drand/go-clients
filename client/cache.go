@@ -43,7 +43,7 @@ func (t *typedCache) Add(round uint64, result drand.Result) {
 
 // TryGet attempts to get a result from the cache
 func (t *typedCache) TryGet(round uint64) drand.Result {
-	if val, ok := t.ARCCache.Get(round); ok {
+	if val, ok := t.Get(round); ok {
 		return val.(drand.Result)
 	}
 	return nil
@@ -86,7 +86,7 @@ func (c *cachingClient) SetLog(l log.Logger) {
 // String returns the name of this client.
 func (c *cachingClient) String() string {
 	if arc, ok := c.cache.(*typedCache); ok {
-		return fmt.Sprintf("%s.(+%d el cache)", c.Client, arc.ARCCache.Len())
+		return fmt.Sprintf("%s.(+%d el cache)", c.Client, arc.Len())
 	}
 	return fmt.Sprintf("%s.(+nil cache)", c.Client)
 }

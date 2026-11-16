@@ -81,14 +81,8 @@ func makeClient(cfg *clientConfig) (drand.Client, error) {
 		return nil, err
 	}
 
-	// tryPopulateInfo adopts whatever the first responding client advertises, so
-	// the configured chain hash has to be enforced against it here. The bundled
-	// HTTP client already checks this itself, but a custom drand.Client would
-	// otherwise get to choose the public key every verifier is then handed.
-	if cfg.chainHash != nil && cfg.chainInfo != nil && !bytes.Equal(cfg.chainInfo.Hash(), cfg.chainHash) {
-		l.Errorw("chain hash mismatch", "expected", cfg.chainHash, "got", cfg.chainInfo.Hash())
-		return nil, fmt.Errorf("%w: expected %x, chain info advertises %x",
-			drand.ErrInvalidChainHash, cfg.chainHash, cfg.chainInfo.Hash())
+	if err := cfg.checkChainHash(); err != nil {
+		return nil, err
 	}
 
 	// provision watcher client
@@ -105,23 +99,12 @@ func makeClient(cfg *clientConfig) (drand.Client, error) {
 		trySetLog(c, cfg.log)
 	}
 
-	var c drand.Client
-
-	verifiers := make([]drand.Client, 0, len(cfg.clients))
-	for _, source := range cfg.clients {
-		sch, err := crypto.GetSchemeByID(cfg.chainInfo.Scheme)
-		if err != nil {
-			return nil, fmt.Errorf("invalid scheme name in makeClient: %w", err)
-		}
-
-		nv := newVerifyingClient(source, cfg.previousResult, cfg.fullVerify, sch)
-		verifiers = append(verifiers, nv)
-		if source == wc {
-			wc = nv
-		}
+	verifiers, wc, err := makeVerifiers(cfg, wc)
+	if err != nil {
+		return nil, err
 	}
 
-	c, err = makeOptimizingClient(l, cfg, verifiers, wc, cache)
+	c, err := makeOptimizingClient(l, cfg, verifiers, wc, cache)
 	if err != nil {
 		return nil, err
 	}
@@ -133,6 +116,25 @@ func makeClient(cfg *clientConfig) (drand.Client, error) {
 	wa.Start()
 
 	return c, nil
+}
+
+// makeVerifiers wraps every configured client in a verifying client. It
+// returns the verifying wrapper of the watcher wc, if wc is one of them.
+func makeVerifiers(cfg *clientConfig, wc drand.Client) (verifiers []drand.Client, verifyingWatcher drand.Client, err error) {
+	sch, err := crypto.GetSchemeByID(cfg.chainInfo.Scheme)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid scheme name in makeClient: %w", err)
+	}
+
+	verifiers = make([]drand.Client, 0, len(cfg.clients))
+	for _, source := range cfg.clients {
+		nv := newVerifyingClient(source, cfg.previousResult, cfg.fullVerify, sch)
+		verifiers = append(verifiers, nv)
+		if source == wc {
+			wc = nv
+		}
+	}
+	return verifiers, wc, nil
 }
 
 //nolint:lll // This function has nicely named parameters, so it's long.
@@ -209,6 +211,19 @@ type clientConfig struct {
 	autoWatchRetry time.Duration
 	// prometheus is an interface to a Prometheus system
 	prometheus prometheus.Registerer
+}
+
+// checkChainHash enforces the configured chain hash against the chain info.
+// tryPopulateInfo adopts whatever the first responding client advertises. The
+// bundled HTTP client already checks this itself, but a custom drand.Client
+// would otherwise get to choose the public key every verifier is then handed.
+func (c *clientConfig) checkChainHash() error {
+	if c.chainHash == nil || c.chainInfo == nil || bytes.Equal(c.chainInfo.Hash(), c.chainHash) {
+		return nil
+	}
+	c.log.Errorw("chain hash mismatch", "expected", c.chainHash, "got", c.chainInfo.Hash())
+	return fmt.Errorf("%w: expected %x, chain info advertises %x",
+		drand.ErrInvalidChainHash, c.chainHash, c.chainInfo.Hash())
 }
 
 func (c *clientConfig) tryPopulateInfo(ctx context.Context, clients ...drand.Client) (err error) {

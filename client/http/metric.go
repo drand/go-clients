@@ -52,7 +52,7 @@ func (c *HealthMetrics) startObserve(ctx context.Context) {
 
 		result, err := c.clients[n].Get(ctx, c.clients[n].RoundAt(time.Now())+1)
 		if err != nil {
-			metrics.ClientHTTPHeartbeatFailure.With(prometheus.Labels{"http_address": httpClient.root}).Inc()
+			metrics.ClientHTTPHeartbeatFailure.With(prometheus.Labels{metrics.HTTPAddressLabel: httpClient.root}).Inc()
 			// advance regardless: staying on a failing client would pin the
 			// round-robin to it and stop measuring every other relay, which is
 			// exactly the situation this heartbeat exists to surface.
@@ -60,14 +60,14 @@ func (c *HealthMetrics) startObserve(ctx context.Context) {
 			continue
 		}
 
-		metrics.ClientHTTPHeartbeatSuccess.With(prometheus.Labels{"http_address": httpClient.root}).Inc()
+		metrics.ClientHTTPHeartbeatSuccess.With(prometheus.Labels{metrics.HTTPAddressLabel: httpClient.root}).Inc()
 
 		// compute the latency metric
 		actual := time.Now().UnixNano()
 		expected := common.TimeOfRound(httpClient.chainInfo.Period, httpClient.chainInfo.GenesisTime, result.GetRound()) * 1e9
 		// the labels of the gauge vec must already be set at the registerer level
 		metrics.ClientHTTPHeartbeatLatency.
-			With(prometheus.Labels{"http_address": httpClient.root}).
+			With(prometheus.Labels{metrics.HTTPAddressLabel: httpClient.root}).
 			Set(float64(actual-expected) / float64(time.Millisecond))
 		c.next++
 	}
