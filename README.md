@@ -21,6 +21,14 @@ Run `./drand-cli --help` for a list of supported options.
 ./drand-cli get chain-info --url https://api.drand.sh --insecure
 ```
 
+To follow a chain and expose the client metrics for Prometheus:
+
+```sh
+./drand-cli watch --url https://api.drand.sh \
+    --hash 52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971 \
+    --client-metrics-address 127.0.0.1:9999 --client-metrics-id my-client
+```
+
 # Migration from drand/drand
 
 Prior to drand V2 release, the drand client code lived in the drand/drand repo. Since its V2 release, the drand daemon code aims at being more minimalist and having as few dependencies as possible.
