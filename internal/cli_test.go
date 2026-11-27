@@ -34,3 +34,10 @@ func testCommand(t *testing.T, args []string, exp string) {
 	t.Logf("RUNNING: %v\n", args)
 	require.Contains(t, strings.Trim(buff.String(), "\n"), exp)
 }
+
+func TestWatchRequiresBothMetricsFlags(t *testing.T) {
+	for _, flag := range []string{"--client-metrics-address=127.0.0.1:0", "--client-metrics-id=test"} {
+		err := CLI().Run([]string{"drand", "watch", "--url", "http://127.0.0.1:1", "--insecure", flag})
+		require.ErrorContains(t, err, "must be set together", flag)
+	}
+}

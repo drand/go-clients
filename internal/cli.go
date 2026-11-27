@@ -1,14 +1,22 @@
 package drand
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net"
+	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	json "github.com/nikkolasg/hexjson"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/urfave/cli/v2"
 
+	"github.com/drand/go-clients/client"
 	"github.com/drand/go-clients/drand"
 
 	"github.com/drand/drand/v2/common"
@@ -24,7 +32,24 @@ var (
 
 var SetVersionPrinter sync.Once
 
+var clientMetricsAddressFlag = &cli.StringFlag{
+	Name:  "client-metrics-address",
+	Usage: "host:port to serve the client Prometheus metrics on, requires --client-metrics-id",
+}
+
+var clientMetricsIDFlag = &cli.StringFlag{
+	Name:  "client-metrics-id",
+	Usage: "Value of the client_id label set on the client metrics, requires --client-metrics-address",
+}
+
 var appCommands = []*cli.Command{
+	{
+		Name: "watch",
+		Usage: "Print new public randomness as it becomes available, " +
+			"from the given http-relays and gossip relays.\n",
+		Flags:  append(toArray(lib.ClientFlags...), lib.PortFlag, clientMetricsAddressFlag, clientMetricsIDFlag),
+		Action: watch,
+	},
 	{
 		Name: "get",
 		Usage: "get allows for public information retrieval from a remote " +
@@ -90,7 +115,7 @@ func CLI() *cli.App {
 }
 
 func toArray(flags ...cli.Flag) []cli.Flag {
-	return flags
+	return append([]cli.Flag(nil), flags...)
 }
 
 func instantiateClient(cctx *cli.Context) (drand.Client, error) {
@@ -129,6 +154,63 @@ func getPublicRandomness(cctx *cli.Context) error {
 		return err
 	}
 	return json.NewEncoder(cctx.App.Writer).Encode(round)
+}
+
+func watch(cctx *cli.Context) error {
+	addr := cctx.String(clientMetricsAddressFlag.Name)
+	id := cctx.String(clientMetricsIDFlag.Name)
+	if (addr == "") != (id == "") {
+		return fmt.Errorf("--%s and --%s must be set together", clientMetricsAddressFlag.Name, clientMetricsIDFlag.Name)
+	}
+
+	var opts []client.Option
+	if addr != "" {
+		registry := prometheus.NewRegistry()
+		srv, err := serveMetrics(cctx.Context, addr, registry)
+		if err != nil {
+			return err
+		}
+		defer srv.Close()
+		opts = append(opts, client.WithPrometheus(
+			prometheus.WrapRegistererWith(prometheus.Labels{"client_id": id}, registry)))
+	}
+
+	c, err := lib.Create(cctx, addr != "", opts...)
+	if err != nil {
+		return fmt.Errorf("constructing client: %w", err)
+	}
+	defer c.Close()
+
+	for r := range c.Watch(cctx.Context) {
+		fmt.Fprintf(cctx.App.Writer, "%d\t%x\n", r.GetRound(), r.GetRandomness())
+	}
+	return nil
+}
+
+const metricsTimeout = 10 * time.Second
+
+// serveMetrics serves registry on addr under /metrics until the returned
+// server is closed.
+func serveMetrics(ctx context.Context, addr string, registry *prometheus.Registry) (*http.Server, error) {
+	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", addr)
+	if err != nil {
+		return nil, fmt.Errorf("listening for metrics on %s: %w", addr, err)
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{Timeout: metricsTimeout}))
+	srv := &http.Server{
+		Handler:           mux,
+		ReadHeaderTimeout: metricsTimeout,
+		ReadTimeout:       metricsTimeout,
+		WriteTimeout:      2 * metricsTimeout,
+	}
+	go func() {
+		if err := srv.Serve(lis); !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("metrics server stopped: %v", err)
+		}
+	}()
+	return srv, nil
 }
 
 func getChainInfo(cctx *cli.Context) error {

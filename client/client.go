@@ -14,6 +14,7 @@ import (
 	"github.com/drand/drand/v2/common/chain"
 	"github.com/drand/drand/v2/common/log"
 	"github.com/drand/drand/v2/crypto"
+	"github.com/drand/go-clients/internal/metrics"
 )
 
 const ClientStartupTimeout = time.Second * 5
@@ -115,7 +116,20 @@ func makeClient(cfg *clientConfig) (drand.Client, error) {
 
 	wa.Start()
 
-	return c, nil
+	return attachMetrics(cfg, c)
+}
+
+// attachMetrics registers the client metrics on the registry given through
+// WithPrometheus, if any, and starts reporting the watch latency of c.
+func attachMetrics(cfg *clientConfig, c drand.Client) (drand.Client, error) {
+	if cfg.prometheus == nil {
+		return c, nil
+	}
+	if err := metrics.RegisterClientMetrics(cfg.prometheus); err != nil {
+		_ = c.Close() // the registration error is the one worth reporting
+		return nil, fmt.Errorf("registering client metrics: %w", err)
+	}
+	return newWatchLatencyMetricClient(c, cfg.chainInfo), nil
 }
 
 // makeVerifiers wraps every configured client in a verifying client. It
